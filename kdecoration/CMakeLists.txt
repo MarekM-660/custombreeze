@@ -1,4 +1,4 @@
-add_definitions(-DTRANSLATION_DOMAIN="classik_kwin_deco")
+add_definitions(-DTRANSLATION_DOMAIN="custom_kwin_deco")
 
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS CoreAddons GuiAddons ConfigWidgets WindowSystem I18n IconThemes)
 find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS DBus)
@@ -55,7 +55,7 @@ set(breezedecoration_config_SRCS
     config/breezeexceptionlistwidget.cpp
     config/breezeexceptionmodel.cpp
     config/breezeitemmodel.cpp
-    config/ui/classikdecoration_config.qrc
+    config/ui/customdecoration_config.qrc
 )
 
 set(breezedecoration_config_PART_FORMS
@@ -68,18 +68,18 @@ set(breezedecoration_config_PART_FORMS
 ki18n_wrap_ui(breezedecoration_config_PART_FORMS_HEADERS ${breezedecoration_config_PART_FORMS})
 
 ### build library
-add_library(classikdecoration MODULE
+add_library(customdecoration MODULE
     ${breezedecoration_SRCS}
     ${breezedecoration_config_SRCS}
     ${breezedecoration_config_PART_FORMS_HEADERS})
 
-target_link_libraries(classikdecoration
+target_link_libraries(customdecoration
     PUBLIC
         Qt::Core
         Qt::Gui
         Qt::DBus
     PRIVATE
-        classikcommon5
+        customcommon5
         KDecoration2::KDecoration
         #KF5::ConfigCore
         KF5::CoreAddons
@@ -90,14 +90,14 @@ target_link_libraries(classikdecoration
         KF5::WindowSystem)
 
 if(BREEZE_HAVE_X11)
-  target_link_libraries(classikdecoration PUBLIC XCB::XCB)
+  target_link_libraries(customdecoration PUBLIC XCB::XCB)
   if (TARGET Qt5::X11Extras)
-    target_link_libraries(classikdecoration PUBLIC Qt5::X11Extras)
+    target_link_libraries(customdecoration PUBLIC Qt5::X11Extras)
   else ()
-    target_link_libraries(classikdecoration PUBLIC Qt6::GuiPrivate)
+    target_link_libraries(customdecoration PUBLIC Qt6::GuiPrivate)
   endif()
 endif()
 
 
-install(TARGETS classikdecoration DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration2)
-install(FILES config/classikdecorationconfig.desktop DESTINATION  ${KDE_INSTALL_KSERVICESDIR})
+install(TARGETS customdecoration DESTINATION ${KDE_INSTALL_PLUGINDIR}/org.kde.kdecoration2)
+install(FILES config/customdecorationconfig.desktop DESTINATION  ${KDE_INSTALL_KSERVICESDIR})

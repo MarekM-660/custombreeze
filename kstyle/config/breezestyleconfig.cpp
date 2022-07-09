@@ -31,14 +31,14 @@ StyleConfig::StyleConfig(QWidget *parent)
 {
     setupUi(this);
 
-#if CLASSIK_GIT_MASTER
+#if CUSTOM_GIT_MASTER
     // set the long version string if from the git master
-    _version->setText("v" + QString(CLASSIK_VERSION) + ".git");
+    _version->setText("v" + QString(CUSTOM_VERSION) + ".git");
 
 #else
     // set shortened version string in UI if an official release
     QRegularExpression re("\\d+\\.\\d+");
-    QRegularExpressionMatch match = re.match(CLASSIK_VERSION);
+    QRegularExpressionMatch match = re.match(CUSTOMs_VERSION);
     if (match.hasMatch()) {
         QString matched = match.captured(0);
         _version->setText("v" + matched);

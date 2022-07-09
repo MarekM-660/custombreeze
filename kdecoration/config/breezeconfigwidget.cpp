@@ -32,14 +32,14 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     // configuration
     m_ui.setupUi(this);
 
-#if CLASSIK_GIT_MASTER
+#if CUSTOM_GIT_MASTER
     // set the long version string if from the git master
-    m_ui.version->setText("v" + QString(CLASSIK_VERSION) + ".git");
+    m_ui.version->setText("v" + QString(CUSTOM_VERSION) + ".git");
 
 #else
     // set shortened version string in UI if an official release
     QRegularExpression re("\\d+\\.\\d+");
-    QRegularExpressionMatch match = re.match(CLASSIK_VERSION);
+    QRegularExpressionMatch match = re.match(CUSTOM_VERSION);
     if (match.hasMatch()) {
         QString matched = match.captured(0);
         m_ui.version->setText("v" + matched);

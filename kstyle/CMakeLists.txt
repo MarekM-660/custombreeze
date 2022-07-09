@@ -91,33 +91,33 @@ set(breeze_PART_SRCS
 #removed as the kdecoration kfgc is now processed in libbreezecommon
 #kconfig_add_kcfg_files(breeze_PART_SRCS ../kdecoration/breezesettings.kcfgc)
 kconfig_add_kcfg_files(breeze_PART_SRCS breezestyleconfigdata.kcfgc)
-add_library(classik MODULE ${breeze_PART_SRCS})
-target_link_libraries(classik Qt::Core Qt::Gui Qt::Widgets Qt::DBus)
+add_library(custom MODULE ${breeze_PART_SRCS})
+target_link_libraries(custom Qt::Core Qt::Gui Qt::Widgets Qt::DBus)
 if( BREEZE_HAVE_QTQUICK )
-    target_link_libraries(classik Qt::Quick KF5::CoreAddons KF5::Kirigami2)
+    target_link_libraries(custom Qt::Quick KF5::CoreAddons KF5::Kirigami2)
 endif()
 if (TARGET Qt5::X11Extras)
-    target_link_libraries(classik Qt5::X11Extras)
+    target_link_libraries(custom Qt5::X11Extras)
 elseif (TARGET Qt6::Gui)
-    target_link_libraries(classik Qt6::GuiPrivate)
+    target_link_libraries(custom Qt6::GuiPrivate)
 endif()
-target_link_libraries(classik KF5::CoreAddons KF5::ConfigCore KF5::ConfigWidgets KF5::GuiAddons KF5::IconThemes KF5::WindowSystem)
-target_link_libraries(classik classikcommon5)
+target_link_libraries(custom KF5::CoreAddons KF5::ConfigCore KF5::ConfigWidgets KF5::GuiAddons KF5::IconThemes KF5::WindowSystem)
+target_link_libraries(custom customcommon5)
 
 if(KF5FrameworkIntegration_FOUND)
-    target_link_libraries(classik KF5::Style)
+    target_link_libraries(custom KF5::Style)
 endif()
 
 if (WIN32)
     # As stated in https://docs.microsoft.com/en-us/cpp/c-runtime-library/math-constants M_PI only gets defined
     # when if _USE_MATH_DEFINES is defined
-    target_compile_definitions(classik PRIVATE _USE_MATH_DEFINES _BSD_SOURCE)
+    target_compile_definitions(custom PRIVATE _USE_MATH_DEFINES _BSD_SOURCE)
 endif()
 
 
 ########### install files ###############
-install(TARGETS classik DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles/)
-install(FILES classik.themerc  DESTINATION  ${KDE_INSTALL_DATADIR}/kstyle/themes)
+install(TARGETS custom DESTINATION ${KDE_INSTALL_QTPLUGINDIR}/styles/)
+install(FILES custom.themerc  DESTINATION  ${KDE_INSTALL_DATADIR}/kstyle/themes)
 
 ########### subdirectories ###############
 add_subdirectory(config)

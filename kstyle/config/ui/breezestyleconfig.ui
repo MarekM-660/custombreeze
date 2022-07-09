@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>631</width>
-    <height>520</height>
+    <width>762</width>
+    <height>574</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -627,8 +627,8 @@
              <widget class="QSpinBox" name="_scrollBarSliderThicknessMouseOver">
               <property name="minimumSize">
                <size>
-                <width>74</width>
-                <height>0</height>
+                <width>97</width>
+                <height>34</height>
                </size>
               </property>
               <property name="minimum">
@@ -666,8 +666,8 @@
              <widget class="QSpinBox" name="_scrollBarSliderPadding">
               <property name="minimumSize">
                <size>
-                <width>74</width>
-                <height>0</height>
+                <width>97</width>
+                <height>34</height>
                </size>
               </property>
               <property name="maximum">
@@ -689,8 +689,8 @@
              <widget class="QSpinBox" name="_scrollBarMinSliderHeight">
               <property name="minimumSize">
                <size>
-                <width>74</width>
-                <height>0</height>
+                <width>97</width>
+                <height>34</height>
                </size>
               </property>
               <property name="minimum">
@@ -900,7 +900,9 @@
   <tabstop>_menuOpacity</tabstop>
   <tabstop>graphicsView</tabstop>
  </tabstops>
- <resources/>
+ <resources>
+  <include location="customstyleconfig.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>_scrollBarSubLineButtons</sender>

@@ -9,7 +9,7 @@
 
 #include "breezedecoration.h"
 
-#if CLASSIK_DECORATION_DEBUG_MODE
+#if CUSTOM_DECORATION_DEBUG_MODE
 #include "setqdebug_logging.h"
 #endif
 
@@ -158,8 +158,8 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
 {
     g_sDecoCount++;
 
-#if CLASSIK_DECORATION_DEBUG_MODE
-    setDebugOutput(CLASSIK_QDEBUG_OUTPUT_PATH_RELATIVE_HOME);
+#if CUSTOM_DECORATION_DEBUG_MODE
+    setDebugOutput(CUSTOM_QDEBUG_OUTPUT_PATH_RELATIVE_HOME);
 #endif
 }
 

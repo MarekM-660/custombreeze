@@ -1,0 +1,13 @@
+[Desktop Entry]
+Exec=kcmshell5 customdecorationconfig
+Icon=preferences-system-windows
+Type=Service
+X-KDE-ServiceTypes=KCModule
+
+X-KDE-Library=org.kde.kdecoration2/customdecoration
+X-KDE-ParentApp=kcontrol
+X-KDE-Weight=50
+
+Name=CustomBreeze: Window Decoration
+
+X-KDE-Keywords=custom,classik,decoration
