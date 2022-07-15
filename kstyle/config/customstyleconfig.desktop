@@ -1,13 +1,13 @@
 [Desktop Entry]
-Exec=kcmshell5 classikstyleconfig
+Exec=kcmshell5 customstyleconfig
 Icon=preferences-desktop-theme
 Type=Service
 X-KDE-ServiceTypes=KCModule
 
-X-KDE-Library=kstyle_classik_config
+X-KDE-Library=kstyle_custom_config
 X-KDE-ParentApp=kcontrol
 X-KDE-Weight=60
 
-Name=ClassiK: Widget Style
+Name=CustomBreeze: Widget Style
 
-X-KDE-Keywords=classik,widget,style
+X-KDE-Keywords=custom,classik,widget,style
