@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1010</width>
-    <height>619</height>
+    <height>768</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -493,8 +493,8 @@
              <string>  Classik</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/classik_config_icons/Classik.png</normaloff>:/classik_config_icons/Classik.png</iconset>
+             <iconset resource="customdecoration_config.qrc">
+              <normaloff>:/custom_config_icons/Classik.png</normaloff>:/custom_config_icons/Classik.png</iconset>
             </property>
            </item>
            <item>
@@ -502,8 +502,8 @@
              <string>  Kite</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/classik_config_icons/Kite.png</normaloff>:/classik_config_icons/Kite.png</iconset>
+             <iconset resource="customdecoration_config.qrc">
+              <normaloff>:/custom_config_icons/Kite.png</normaloff>:/custom_config_icons/Kite.png</iconset>
             </property>
            </item>
            <item>
@@ -511,8 +511,8 @@
              <string>  Oxygen/Breeze</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/classik_config_icons/Oxygen.png</normaloff>:/classik_config_icons/Oxygen.png</iconset>
+             <iconset resource="customdecoration_config.qrc">
+              <normaloff>:/custom_config_icons/Oxygen.png</normaloff>:/custom_config_icons/Oxygen.png</iconset>
             </property>
            </item>
            <item>
@@ -520,8 +520,8 @@
              <string>  Redmond</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/classik_config_icons/Redmond.png</normaloff>:/classik_config_icons/Redmond.png</iconset>
+             <iconset resource="customdecoration_config.qrc">
+              <normaloff>:/custom_config_icons/Redmond.png</normaloff>:/custom_config_icons/Redmond.png</iconset>
             </property>
            </item>
            <item>
@@ -529,8 +529,8 @@
              <string>  Redmond 10</string>
             </property>
             <property name="icon">
-             <iconset>
-              <normaloff>:/classik_config_icons/Redmond10.png</normaloff>:/classik_config_icons/Redmond10.png</iconset>
+             <iconset resource="customdecoration_config.qrc">
+              <normaloff>:/custom_config_icons/Redmond10.png</normaloff>:/custom_config_icons/Redmond10.png</iconset>
             </property>
            </item>
           </widget>
@@ -1821,54 +1821,146 @@ side margins:</string>
       <attribute name="title">
        <string>&amp;Titlebar</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_5">
-       <item>
-        <spacer name="verticalSpacer_22">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="drawBackgroundGradient">
-         <property name="text">
-          <string>Draw titlebar background &amp;gradient</string>
-         </property>
-        </widget>
-       </item>
-       <item>
+      <layout class="QGridLayout" name="gridLayout_15">
+       <item row="4" column="0">
         <widget class="QCheckBox" name="drawTitleBarSeparator">
          <property name="text">
           <string>Draw separator under active window's titlebar</string>
          </property>
         </widget>
        </item>
-       <item>
-        <spacer name="verticalSpacer_18">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
+       <item row="6" column="0">
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item>
+          <widget class="QLabel" name="label_34">
+           <property name="text">
+            <string>Select titlebar font:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="KFontRequester" name="titlebarFont">
+           <property name="font">
+            <font>
+             <strikeout>false</strikeout>
+            </font>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_28">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
-       <item>
+       <item row="7" column="0">
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="enabled">
+          <bool>true</bool>
+         </property>
+         <property name="title">
+          <string>Titlebar background</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_16">
+          <item row="7" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <item>
+             <widget class="QLabel" name="colorLabel_1">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Inactive window:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="KColorButton" name="titlebarInactiveColor">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="6" column="1">
+           <spacer name="horizontalSpacer_19">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="backgroundImgEnabled">
+            <property name="text">
+             <string>Draw an image on the background of the title bar </string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="backgroundColorEnabled">
+            <property name="text">
+             <string>Force the color of the titlebar</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="drawBackgroundGradient">
+            <property name="text">
+             <string>Draw titlebar background &amp;gradient</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="KUrlRequester" name="titlebarBackgroundImg">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="mode">
+             <set>KFile::ExistingOnly|KFile::File|KFile::LocalOnly</set>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <item>
+             <widget class="QLabel" name="colorLabel_2">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Active window:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="KColorButton" name="titlebarActiveColor">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="8" column="0">
         <widget class="QGroupBox" name="groupBox_4">
          <property name="title">
           <string>Titlebar opacity</string>
@@ -1889,6 +1981,20 @@ side margins:</string>
           <property name="bottomMargin">
            <number>18</number>
           </property>
+          <item row="5" column="0">
+           <widget class="QCheckBox" name="blurTransparentTitlebars">
+            <property name="text">
+             <string>Blur titlebars that have transparency</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="opaqueMaximizedTitlebars">
+            <property name="text">
+             <string>Always make maximized titlebars opaque</string>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <property name="spacing">
@@ -2119,108 +2225,33 @@ side margins:</string>
               </item>
              </layout>
             </item>
-            <item>
-             <spacer name="verticalSpacer_17">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
            </layout>
           </item>
-          <item row="2" column="0">
-           <widget class="QCheckBox" name="opaqueMaximizedTitlebars">
-            <property name="text">
-             <string>Always make maximized titlebars opaque</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
-           <spacer name="verticalSpacer_9">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="1" column="1">
-           <spacer name="horizontalSpacer_35">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Minimum</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>120</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <spacer name="verticalSpacer_12">
-            <property name="orientation">
-             <enum>Qt::Vertical</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>10</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="3" column="0">
-           <widget class="QCheckBox" name="blurTransparentTitlebars">
-            <property name="text">
-             <string>Blur titlebars that have transparency</string>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="0">
+          <item row="6" column="0">
            <widget class="QCheckBox" name="applyOpacityToHeader">
             <property name="text">
              <string>Apply these opacity settings to entire Header area (ClassiK application style required)</string>
             </property>
            </widget>
           </item>
+          <item row="2" column="0">
+           <spacer name="verticalSpacer_17">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
          </layout>
         </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_19">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
        </item>
       </layout>
      </widget>
@@ -2743,9 +2774,19 @@ side margins:</string>
  </widget>
  <customwidgets>
   <customwidget>
+   <class>KUrlRequester</class>
+   <extends>QWidget</extends>
+   <header>kurlrequester.h</header>
+  </customwidget>
+  <customwidget>
    <class>KColorButton</class>
    <extends>QPushButton</extends>
    <header>kcolorbutton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>KFontRequester</class>
+   <extends>QWidget</extends>
+   <header>kfontrequester.h</header>
   </customwidget>
   <customwidget>
    <class>Breeze::ExceptionListWidget</class>
@@ -2755,7 +2796,6 @@ side margins:</string>
   </customwidget>
  </customwidgets>
  <tabstops>
-  <tabstop>tabWidget</tabstop>
   <tabstop>buttonIconStyle</tabstop>
   <tabstop>iconSize</tabstop>
   <tabstop>systemIconSize</tabstop>
@@ -2785,13 +2825,10 @@ side margins:</string>
   <tabstop>cornerRadius_4</tabstop>
   <tabstop>cornerRadius_3</tabstop>
   <tabstop>percentMaximizedTopBottomMargins</tabstop>
-  <tabstop>drawBackgroundGradient</tabstop>
-  <tabstop>drawTitleBarSeparator</tabstop>
   <tabstop>activeTitlebarOpacity_2</tabstop>
   <tabstop>activeTitlebarOpacity</tabstop>
   <tabstop>inactiveTitlebarOpacity_2</tabstop>
   <tabstop>inactiveTitlebarOpacity</tabstop>
-  <tabstop>opaqueMaximizedTitlebars</tabstop>
   <tabstop>blurTransparentTitlebars</tabstop>
   <tabstop>applyOpacityToHeader</tabstop>
   <tabstop>useTitlebarColorForAllBorders</tabstop>

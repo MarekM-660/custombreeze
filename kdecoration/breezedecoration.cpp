@@ -197,6 +197,12 @@ QColor Decoration::titleBarColor(bool returnNonAnimatedColor) const
 
     QColor activeTitleBarColor = c->color(ColorGroup::Active, ColorRole::TitleBar);
     QColor inactiveTitlebarColor = c->color(ColorGroup::Inactive, ColorRole::TitleBar);
+
+    if (m_internalSettings->backgroundColorEnabled()) {
+        activeTitleBarColor = m_internalSettings->titlebarActiveColor();
+        inactiveTitlebarColor = m_internalSettings->titlebarInactiveColor();
+    }
+
     if (m_internalSettings->opaqueMaximizedTitlebars() && c->isMaximized())
         activeTitleBarColor.setAlpha(255);
 
@@ -895,12 +901,18 @@ void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
 
     QColor titleBarColor(titleBarColorWithAddedTransparency());
 
+    QImage titleBarImage(m_internalSettings->titlebarBackgroundImg());
+
     // render a linear gradient on title area
     if (c->isActive() && m_internalSettings->drawBackgroundGradient()) {
         QLinearGradient gradient(0, 0, 0, m_titleRect.height());
         gradient.setColorAt(0.0, titleBarColor.lighter(120));
         gradient.setColorAt(0.8, titleBarColor);
         painter->setBrush(gradient);
+
+    } else if (m_internalSettings->backgroundImgEnabled()) {
+        painter->drawRoundedRect(QRect(QPoint(0, 0), titleBarImage.size()), m_internalSettings->cornerRadius(), m_internalSettings->cornerRadius());
+        painter->setBrush(QBrush(titleBarImage));
 
     } else {
         painter->setBrush(titleBarColor);
@@ -935,7 +947,7 @@ void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
     painter->restore();
 
     // draw caption
-    painter->setFont(s->font());
+    painter->setFont(m_internalSettings->titlebarFont());
     painter->setPen(fontColor());
     const auto cR = captionRect();
     const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());

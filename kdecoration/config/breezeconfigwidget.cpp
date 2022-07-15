@@ -76,6 +76,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.activeTitlebarOpacity, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.inactiveTitlebarOpacity, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.boldButtonIcons, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
+    connect(m_ui.titlebarBackgroundImg, SIGNAL(valueChanged(qstring)), SLOT(updateChanged()));
     connect(m_ui.redAlwaysShownClose, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
     connect(m_ui.drawBorderOnMaximizedWindows, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
     connect(m_ui.drawSizeGrip, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
@@ -87,6 +88,9 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.applyOpacityToHeader, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
     connect(m_ui.translucentButtonBackgrounds, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
     connect(m_ui.colorizeSystemIcons, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
+    connect(m_ui.titlebarActiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
+    connect(m_ui.titlebarInactiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
+    connect(m_ui.titlebarFont, &KFontRequester::fontSelected, this, &ConfigWidget::updateChanged);
 
     // connect dual controls with same values
     connect(m_ui.titlebarTopBottomMargins, SIGNAL(valueChanged(double)), m_ui.titlebarTopBottomMargins_2, SLOT(setValue(double)));
@@ -109,6 +113,12 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.activeTitlebarOpacity_2, SIGNAL(valueChanged(int)), m_ui.activeTitlebarOpacity, SLOT(setValue(int)));
     connect(m_ui.inactiveTitlebarOpacity, SIGNAL(valueChanged(int)), m_ui.inactiveTitlebarOpacity_2, SLOT(setValue(int)));
     connect(m_ui.inactiveTitlebarOpacity_2, SIGNAL(valueChanged(int)), m_ui.inactiveTitlebarOpacity, SLOT(setValue(int)));
+
+    // only enable titlebar color settings when backgroundColorEnabled is checked
+    connect(m_ui.backgroundColorEnabled, &QAbstractButton::toggled, this, &ConfigWidget::setEnabledTitlebarColorSettings);
+
+    // only enable titlebarBackgroundImg when backgroundColorEnabled is checked
+    connect(m_ui.backgroundImgEnabled, &QAbstractButton::toggled, this, &ConfigWidget::setEnabledTitlebarImgSettings);
 
     // only enable animationsSpeed when animationsEnabled is checked
     connect(m_ui.animationsEnabled, &QAbstractButton::toggled, this, &ConfigWidget::setEnabledAnimationsSpeed);
@@ -163,6 +173,10 @@ void ConfigWidget::load()
     m_ui.titlebarSideMargins->setValue(m_internalSettings->titlebarSideMargins());
     m_ui.titlebarSideMargins_2->setValue(m_internalSettings->titlebarSideMargins());
     m_ui.cornerRadius->setValue(m_internalSettings->cornerRadius());
+    m_ui.titlebarBackgroundImg->setText(m_internalSettings->titlebarBackgroundImg());
+    m_ui.titlebarActiveColor->setColor(m_internalSettings->titlebarActiveColor());
+    m_ui.titlebarInactiveColor->setColor(m_internalSettings->titlebarInactiveColor());
+    m_ui.titlebarFont->setFont(m_internalSettings->titlebarFont());
 
     // if there is a non-opaque colour set in the system colour scheme then this overrides the control here and disables it
     if (m_translucentActiveSchemeColor) {
@@ -195,6 +209,8 @@ void ConfigWidget::load()
     m_ui.applyOpacityToHeader->setChecked(m_internalSettings->applyOpacityToHeader());
     m_ui.translucentButtonBackgrounds->setChecked(m_internalSettings->translucentButtonBackgrounds());
     m_ui.colorizeSystemIcons->setChecked(m_internalSettings->colorizeSystemIcons());
+    m_ui.backgroundImgEnabled->setChecked(m_internalSettings->backgroundImgEnabled());
+    m_ui.backgroundColorEnabled->setChecked(m_internalSettings->backgroundColorEnabled());
 
     // load shadows
     if (m_internalSettings->shadowSize() <= InternalSettings::ShadowVeryLarge)
@@ -260,6 +276,12 @@ void ConfigWidget::save()
     m_internalSettings->setApplyOpacityToHeader(m_ui.applyOpacityToHeader->isChecked());
     m_internalSettings->setTranslucentButtonBackgrounds(m_ui.translucentButtonBackgrounds->isChecked());
     m_internalSettings->setColorizeSystemIcons(m_ui.colorizeSystemIcons->isChecked());
+    m_internalSettings->setBackgroundImgEnabled(m_ui.backgroundImgEnabled->isChecked());
+    m_internalSettings->setBackgroundColorEnabled(m_ui.backgroundColorEnabled->isChecked());
+    m_internalSettings->setTitlebarBackgroundImg(m_ui.titlebarBackgroundImg->text());
+    m_internalSettings->setTitlebarActiveColor(m_ui.titlebarActiveColor->color());
+    m_internalSettings->setTitlebarInactiveColor(m_ui.titlebarInactiveColor->color());
+    m_internalSettings->setTitlebarFont(m_ui.titlebarFont->font());
 
     m_internalSettings->setShadowSize(m_ui.shadowSize->currentIndex());
     m_internalSettings->setShadowStrength(qRound(qreal(m_ui.shadowStrength->value() * 255) / 100));
@@ -334,6 +356,12 @@ void ConfigWidget::defaults()
     m_ui.applyOpacityToHeader->setChecked(m_internalSettings->applyOpacityToHeader());
     m_ui.translucentButtonBackgrounds->setChecked(m_internalSettings->translucentButtonBackgrounds());
     m_ui.colorizeSystemIcons->setChecked(m_internalSettings->colorizeSystemIcons());
+    m_ui.backgroundImgEnabled->setChecked(m_internalSettings->backgroundImgEnabled());
+    m_ui.backgroundColorEnabled->setChecked(m_internalSettings->backgroundColorEnabled());
+    m_ui.titlebarBackgroundImg->setText(m_internalSettings->titlebarBackgroundImg());
+    m_ui.titlebarActiveColor->setColor(m_internalSettings->titlebarActiveColor());
+    m_ui.titlebarInactiveColor->setColor(m_internalSettings->titlebarInactiveColor());
+    m_ui.titlebarFont->setFont(m_internalSettings->titlebarFont());
 
     m_ui.shadowSize->setCurrentIndex(m_internalSettings->shadowSize());
     m_ui.shadowStrength->setValue(qRound(qreal(m_internalSettings->shadowStrength() * 100) / 255));
@@ -421,6 +449,18 @@ void ConfigWidget::updateChanged()
         modified = true;
     else if ((!m_translucentInactiveSchemeColor) && (m_ui.inactiveTitlebarOpacity->value() != m_internalSettings->inactiveTitlebarOpacity()))
         modified = true;
+    else if (m_ui.backgroundColorEnabled->isChecked() != m_internalSettings->backgroundColorEnabled())
+        modified = true;
+    else if (m_ui.backgroundImgEnabled->isChecked() != m_internalSettings->backgroundImgEnabled())
+        modified = true;
+    else if (m_ui.titlebarBackgroundImg->text() != m_internalSettings->titlebarBackgroundImg())
+        modified = true;
+    else if (m_ui.titlebarActiveColor->color() != m_internalSettings->titlebarActiveColor())
+        modified = true;
+    else if (m_ui.titlebarInactiveColor->color() != m_internalSettings->titlebarInactiveColor())
+        modified = true;
+    else if (m_ui.titlebarFont->font() != m_internalSettings->titlebarFont())
+        modified = true;
 
     // animations
     else if (m_ui.animationsEnabled->isChecked() != m_internalSettings->animationsEnabled())
@@ -463,7 +503,19 @@ void ConfigWidget::setEnabledAnimationsSpeed()
     m_ui.animationsSpeedLabel2->setEnabled(m_ui.animationsEnabled->isChecked());
     m_ui.animationsSpeedLabel4->setEnabled(m_ui.animationsEnabled->isChecked());
 }
-
+// only enable titlebarActiveColor, titlebarInactiveColor and colorLabel_x only when backgroundColorEnabled is checked
+void ConfigWidget::setEnabledTitlebarColorSettings()
+{
+    m_ui.titlebarActiveColor->setEnabled(m_ui.backgroundColorEnabled->isChecked());
+    m_ui.titlebarInactiveColor->setEnabled(m_ui.backgroundColorEnabled->isChecked());
+    m_ui.colorLabel_2->setEnabled(m_ui.backgroundColorEnabled->isChecked());
+    m_ui.colorLabel_1->setEnabled(m_ui.backgroundColorEnabled->isChecked());
+}
+// only enable titlebarBackgroundImg when backgroundColorEnabled is checked
+void ConfigWidget::setEnabledTitlebarImgSettings()
+{
+    m_ui.titlebarBackgroundImg->setEnabled(m_ui.backgroundImgEnabled->isChecked());
+}
 // only enable blurTransparentTitlebars and opaqueMaximizedTitlebars options if transparent titlebars are enabled
 void ConfigWidget::setEnabledTransparentTitlebarOptions()
 {

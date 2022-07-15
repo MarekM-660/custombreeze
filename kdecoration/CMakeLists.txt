@@ -1,6 +1,6 @@
 add_definitions(-DTRANSLATION_DOMAIN="custom_kwin_deco")
 
-find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS CoreAddons GuiAddons ConfigWidgets WindowSystem I18n IconThemes)
+find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS CoreAddons GuiAddons ConfigWidgets WindowSystem I18n IconThemes KIO)
 find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS DBus)
 
 ### XCB
@@ -81,6 +81,7 @@ target_link_libraries(customdecoration
     PRIVATE
         customcommon5
         KDecoration2::KDecoration
+        KF5::KIOWidgets 
         #KF5::ConfigCore
         KF5::CoreAddons
         KF5::ConfigWidgets

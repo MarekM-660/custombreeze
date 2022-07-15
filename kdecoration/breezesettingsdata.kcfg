@@ -100,10 +100,36 @@
     
     <!-- Titlebar opacity for inactive window -->
     <entry name="InactiveTitlebarOpacity" type = "Int">
-       <default>100</default>
-       <min>0</min>
-       <max>100</max>
+        <default>100</default>
+        <min>0</min>
+        <max>100</max>
     </entry>
+    
+    <!-- draw an image on the background of the title bar  -->
+    <entry name="BackgroundImgEnabled" type = "Bool">
+        <default>false</default>
+    </entry>
+
+    <!-- force the color of the titlebar -->
+    <entry name="BackgroundColorEnabled" type = "Bool">
+        <default>false</default>
+    </entry>
+
+    <!-- Titlebar color for active window -->
+    <entry name="TitlebarActiveColor" type = "Color">
+        <default>0, 0, 0</default>
+    </entry>
+
+    <!-- Titlebar color for inactive window -->
+    <entry name="TitlebarInactiveColor" type = "Color">
+       <default>0, 0, 0</default>
+    </entry>
+
+    <!-- Titlebar image path-->
+    <entry name="TitlebarBackgroundImg" type = "String"/>
+
+    <!-- Titlebar font -->
+    <entry name="TitlebarFont" type = "Font"/>
     
     <!-- blur transparent titlebars -->
     <entry name="BlurTransparentTitlebars" type = "Bool">
