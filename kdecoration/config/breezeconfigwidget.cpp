@@ -69,9 +69,12 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.systemIconSize, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
     connect(m_ui.buttonSpacingRight, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.buttonSpacingLeft, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
-    connect(m_ui.titlebarTopBottomMargins, SIGNAL(valueChanged(double)), SLOT(updateChanged()));
+    connect(m_ui.titleSidePadding, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
+    connect(m_ui.titlebarTopMargin, SIGNAL(valueChanged(double)), SLOT(updateChanged()));
+    connect(m_ui.titlebarBottomMargin, SIGNAL(valueChanged(double)), SLOT(updateChanged()));
     connect(m_ui.percentMaximizedTopBottomMargins, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
-    connect(m_ui.titlebarSideMargins, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
+    connect(m_ui.titlebarLeftMargin, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
+    connect(m_ui.titlebarRightMargin, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.cornerRadius, SIGNAL(valueChanged(double)), SLOT(updateChanged()));
     connect(m_ui.activeTitlebarOpacity, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.inactiveTitlebarOpacity, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
@@ -91,12 +94,33 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.titlebarActiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.titlebarInactiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.titlebarFont, &KFontRequester::fontSelected, this, &ConfigWidget::updateChanged);
+    connect(m_ui.redAlwaysShownClose, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.drawBorderOnMaximizedWindows, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.drawSizeGrip, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.drawBackgroundGradient, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.drawTitleBarSeparator, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.useTitlebarColorForAllBorders, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.opaqueMaximizedTitlebars, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.blurTransparentTitlebars, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.applyOpacityToHeader, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.translucentButtonBackgrounds, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.colorizeSystemIcons, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.lockTitleBarTopBottomMargins, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.lockTitleBarLeftRightMargins, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.lockButtonSpacingLeftRight, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.lockFullHeightButtonWidthMargins, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
 
     // connect dual controls with same values
-    connect(m_ui.titlebarTopBottomMargins, SIGNAL(valueChanged(double)), m_ui.titlebarTopBottomMargins_2, SLOT(setValue(double)));
-    connect(m_ui.titlebarTopBottomMargins_2, SIGNAL(valueChanged(double)), m_ui.titlebarTopBottomMargins, SLOT(setValue(double)));
-    connect(m_ui.titlebarSideMargins, SIGNAL(valueChanged(int)), m_ui.titlebarSideMargins_2, SLOT(setValue(int)));
-    connect(m_ui.titlebarSideMargins_2, SIGNAL(valueChanged(int)), m_ui.titlebarSideMargins, SLOT(setValue(int)));
+    connect(m_ui.fullHeightButtonWidthMarginLeft, SIGNAL(valueChanged(int)), SLOT(fullHeightButtonWidthMarginLeftChanged()));
+    connect(m_ui.fullHeightButtonWidthMarginRight, SIGNAL(valueChanged(int)), SLOT(fullHeightButtonWidthMarginRightChanged()));
+    connect(m_ui.titlebarTopMargin, SIGNAL(valueChanged(double)), SLOT(titlebarTopMarginChanged()));
+    connect(m_ui.titlebarBottomMargin, SIGNAL(valueChanged(double)), SLOT(titlebarBottomMarginChanged()));
+    connect(m_ui.titlebarLeftMargin, SIGNAL(valueChanged(int)), SLOT(titlebarLeftMarginChanged()));
+    connect(m_ui.titlebarRightMargin, SIGNAL(valueChanged(int)), SLOT(titlebarRightMarginChanged()));
+    connect(m_ui.buttonSpacingLeft, SIGNAL(valueChanged(int)), SLOT(buttonSpacingLeftChanged()));
+    connect(m_ui.buttonSpacingRight, SIGNAL(valueChanged(int)), SLOT(buttonSpacingRightChanged()));
+    connect(m_ui.titleSidePadding, SIGNAL(valueChanged(int)), m_ui.titleSidePadding_2, SLOT(setValue(int)));
+    connect(m_ui.titleSidePadding_2, SIGNAL(valueChanged(int)), m_ui.titleSidePadding, SLOT(setValue(int)));
     connect(m_ui.cornerRadius, SIGNAL(valueChanged(double)), m_ui.cornerRadius_2, SLOT(setValue(double)));
     connect(m_ui.cornerRadius, SIGNAL(valueChanged(double)), m_ui.cornerRadius_3, SLOT(setValue(double)));
     connect(m_ui.cornerRadius, SIGNAL(valueChanged(double)), m_ui.cornerRadius_4, SLOT(setValue(double)));
@@ -124,7 +148,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.animationsEnabled, &QAbstractButton::toggled, this, &ConfigWidget::setEnabledAnimationsSpeed);
 
     // track animations changes
-    connect(m_ui.animationsEnabled, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
+    connect(m_ui.animationsEnabled, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.animationsSpeedRelativeSystem, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
 
     // only enable transparency options when transparency is setActiveTitlebarOpacity
@@ -139,6 +163,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.thinWindowOutlineStyle, SIGNAL(currentIndexChanged(int)), SLOT(updateCustomColorStackedWidgetVisible()));
     connect(m_ui.thinWindowOutlineCustomColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.thinWindowOutlineThickness, SIGNAL(valueChanged(double)), SLOT(updateChanged()));
+    connect(m_ui.colorizeThinWindowOutlineWithButton, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
 
     // track exception changes
     connect(m_ui.exceptions, &ExceptionListWidget::changed, this, &ConfigWidget::updateChanged);
@@ -147,6 +172,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
 //_________________________________________________________
 void ConfigWidget::load()
 {
+    m_loading = true;
     getTitlebarOpacityFromColorScheme();
 
     // create internal settings and load from rc files
@@ -167,11 +193,12 @@ void ConfigWidget::load()
     m_ui.systemIconSize->setCurrentIndex(m_internalSettings->systemIconSize());
     m_ui.buttonSpacingRight->setValue(m_internalSettings->buttonSpacingRight());
     m_ui.buttonSpacingLeft->setValue(m_internalSettings->buttonSpacingLeft());
-    m_ui.titlebarTopBottomMargins->setValue(m_internalSettings->titlebarTopBottomMargins());
-    m_ui.titlebarTopBottomMargins_2->setValue(m_internalSettings->titlebarTopBottomMargins());
+    m_ui.titleSidePadding->setValue(m_internalSettings->titleSidePadding());
+    m_ui.titlebarTopMargin->setValue(m_internalSettings->titlebarTopMargin());
+    m_ui.titlebarBottomMargin->setValue(m_internalSettings->titlebarBottomMargin());
     m_ui.percentMaximizedTopBottomMargins->setValue(m_internalSettings->percentMaximizedTopBottomMargins());
-    m_ui.titlebarSideMargins->setValue(m_internalSettings->titlebarSideMargins());
-    m_ui.titlebarSideMargins_2->setValue(m_internalSettings->titlebarSideMargins());
+    m_ui.titlebarLeftMargin->setValue(m_internalSettings->titlebarLeftMargin());
+    m_ui.titlebarRightMargin->setValue(m_internalSettings->titlebarRightMargin());
     m_ui.cornerRadius->setValue(m_internalSettings->cornerRadius());
     m_ui.titlebarBackgroundImg->setText(m_internalSettings->titlebarBackgroundImg());
     m_ui.titlebarActiveColor->setColor(m_internalSettings->titlebarActiveColor());
@@ -211,6 +238,10 @@ void ConfigWidget::load()
     m_ui.colorizeSystemIcons->setChecked(m_internalSettings->colorizeSystemIcons());
     m_ui.backgroundImgEnabled->setChecked(m_internalSettings->backgroundImgEnabled());
     m_ui.backgroundColorEnabled->setChecked(m_internalSettings->backgroundColorEnabled());
+    m_ui.lockTitleBarTopBottomMargins->setChecked(m_internalSettings->lockTitleBarTopBottomMargins());
+    m_ui.lockTitleBarLeftRightMargins->setChecked(m_internalSettings->lockTitleBarLeftRightMargins());
+    m_ui.lockButtonSpacingLeftRight->setChecked(m_internalSettings->lockButtonSpacingLeftRight());
+    m_ui.lockFullHeightButtonWidthMargins->setChecked(m_internalSettings->lockFullHeightButtonWidthMargins());
 
     // load shadows
     if (m_internalSettings->shadowSize() <= InternalSettings::ShadowVeryLarge)
@@ -223,6 +254,8 @@ void ConfigWidget::load()
     m_ui.thinWindowOutlineStyle->setCurrentIndex(m_internalSettings->thinWindowOutlineStyle());
     m_ui.thinWindowOutlineCustomColor->setColor(m_internalSettings->thinWindowOutlineCustomColor());
     m_ui.thinWindowOutlineThickness->setValue(m_internalSettings->thinWindowOutlineThickness());
+    m_ui.colorizeThinWindowOutlineWithButton->setChecked(m_internalSettings->colorizeThinWindowOutlineWithButton());
+
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
@@ -231,6 +264,7 @@ void ConfigWidget::load()
     exceptions.readConfig(m_configuration);
     m_ui.exceptions->setExceptions(exceptions.get());
     setChanged(false);
+    m_loading = false;
 }
 
 //_________________________________________________________
@@ -254,9 +288,12 @@ void ConfigWidget::save()
     m_internalSettings->setSystemIconSize(m_ui.systemIconSize->currentIndex());
     m_internalSettings->setButtonSpacingRight(m_ui.buttonSpacingRight->value());
     m_internalSettings->setButtonSpacingLeft(m_ui.buttonSpacingLeft->value());
-    m_internalSettings->setTitlebarTopBottomMargins(m_ui.titlebarTopBottomMargins->value());
+    m_internalSettings->setTitleSidePadding(m_ui.titleSidePadding->value());
+    m_internalSettings->setTitlebarTopMargin(m_ui.titlebarTopMargin->value());
+    m_internalSettings->setTitlebarBottomMargin(m_ui.titlebarBottomMargin->value());
     m_internalSettings->setPercentMaximizedTopBottomMargins(m_ui.percentMaximizedTopBottomMargins->value());
-    m_internalSettings->setTitlebarSideMargins(m_ui.titlebarSideMargins->value());
+    m_internalSettings->setTitlebarLeftMargin(m_ui.titlebarLeftMargin->value());
+    m_internalSettings->setTitlebarRightMargin(m_ui.titlebarRightMargin->value());
     m_internalSettings->setCornerRadius(m_ui.cornerRadius->value());
     if (!m_translucentActiveSchemeColor || m_defaultsPressed)
         m_internalSettings->setActiveTitlebarOpacity(m_ui.activeTitlebarOpacity->value());
@@ -282,6 +319,10 @@ void ConfigWidget::save()
     m_internalSettings->setTitlebarActiveColor(m_ui.titlebarActiveColor->color());
     m_internalSettings->setTitlebarInactiveColor(m_ui.titlebarInactiveColor->color());
     m_internalSettings->setTitlebarFont(m_ui.titlebarFont->font());
+    m_internalSettings->setLockTitleBarTopBottomMargins(m_ui.lockTitleBarTopBottomMargins->isChecked());
+    m_internalSettings->setLockTitleBarLeftRightMargins(m_ui.lockTitleBarLeftRightMargins->isChecked());
+    m_internalSettings->setLockButtonSpacingLeftRight(m_ui.lockButtonSpacingLeftRight->isChecked());
+    m_internalSettings->setLockFullHeightButtonWidthMargins(m_ui.lockFullHeightButtonWidthMargins->isChecked());
 
     m_internalSettings->setShadowSize(m_ui.shadowSize->currentIndex());
     m_internalSettings->setShadowStrength(qRound(qreal(m_ui.shadowStrength->value() * 255) / 100));
@@ -289,6 +330,7 @@ void ConfigWidget::save()
     m_internalSettings->setThinWindowOutlineStyle(m_ui.thinWindowOutlineStyle->currentIndex());
     m_internalSettings->setThinWindowOutlineCustomColor(m_ui.thinWindowOutlineCustomColor->color());
     m_internalSettings->setThinWindowOutlineThickness(m_ui.thinWindowOutlineThickness->value());
+    m_internalSettings->setColorizeThinWindowOutlineWithButton(m_ui.colorizeThinWindowOutlineWithButton->isChecked());
 
     // save configuration
     m_internalSettings->save();
@@ -317,6 +359,7 @@ void ConfigWidget::save()
 //_________________________________________________________
 void ConfigWidget::defaults()
 {
+    m_processingDefaults = true;
     // create internal settings and load from rc files
     m_internalSettings = InternalSettingsPtr(new InternalSettings());
     m_internalSettings->setDefaults();
@@ -335,9 +378,12 @@ void ConfigWidget::defaults()
     m_ui.systemIconSize->setCurrentIndex(m_internalSettings->systemIconSize());
     m_ui.buttonSpacingRight->setValue(m_internalSettings->buttonSpacingRight());
     m_ui.buttonSpacingLeft->setValue(m_internalSettings->buttonSpacingLeft());
-    m_ui.titlebarTopBottomMargins->setValue(m_internalSettings->titlebarTopBottomMargins());
+    m_ui.titleSidePadding->setValue(m_internalSettings->titleSidePadding());
+    m_ui.titlebarTopMargin->setValue(m_internalSettings->titlebarTopMargin());
+    m_ui.titlebarBottomMargin->setValue(m_internalSettings->titlebarBottomMargin());
     m_ui.percentMaximizedTopBottomMargins->setValue(m_internalSettings->percentMaximizedTopBottomMargins());
-    m_ui.titlebarSideMargins->setValue(m_internalSettings->titlebarSideMargins());
+    m_ui.titlebarLeftMargin->setValue(m_internalSettings->titlebarLeftMargin());
+    m_ui.titlebarRightMargin->setValue(m_internalSettings->titlebarRightMargin());
     m_ui.cornerRadius->setValue(m_internalSettings->cornerRadius());
     m_ui.activeTitlebarOpacity->setValue(m_internalSettings->activeTitlebarOpacity());
     m_ui.inactiveTitlebarOpacity->setValue(m_internalSettings->inactiveTitlebarOpacity());
@@ -362,6 +408,10 @@ void ConfigWidget::defaults()
     m_ui.titlebarActiveColor->setColor(m_internalSettings->titlebarActiveColor());
     m_ui.titlebarInactiveColor->setColor(m_internalSettings->titlebarInactiveColor());
     m_ui.titlebarFont->setFont(m_internalSettings->titlebarFont());
+    m_ui.lockTitleBarTopBottomMargins->setChecked(m_internalSettings->lockTitleBarTopBottomMargins());
+    m_ui.lockTitleBarLeftRightMargins->setChecked(m_internalSettings->lockTitleBarLeftRightMargins());
+    m_ui.lockButtonSpacingLeftRight->setChecked(m_internalSettings->lockButtonSpacingLeftRight());
+    m_ui.lockFullHeightButtonWidthMargins->setChecked(m_internalSettings->lockFullHeightButtonWidthMargins());
 
     m_ui.shadowSize->setCurrentIndex(m_internalSettings->shadowSize());
     m_ui.shadowStrength->setValue(qRound(qreal(m_internalSettings->shadowStrength() * 100) / 255));
@@ -369,11 +419,13 @@ void ConfigWidget::defaults()
     m_ui.thinWindowOutlineStyle->setCurrentIndex(m_internalSettings->thinWindowOutlineStyle());
     m_ui.thinWindowOutlineCustomColor->setColor(m_internalSettings->thinWindowOutlineCustomColor());
     m_ui.thinWindowOutlineThickness->setValue(m_internalSettings->thinWindowOutlineThickness());
+    m_ui.colorizeThinWindowOutlineWithButton->setChecked(m_internalSettings->colorizeThinWindowOutlineWithButton());
 
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
 
+    m_processingDefaults = false;
     m_defaultsPressed = true;
 }
 
@@ -400,6 +452,14 @@ void ConfigWidget::updateChanged()
     else if (m_ui.translucentButtonBackgrounds->isChecked() != m_internalSettings->translucentButtonBackgrounds())
         modified = true;
     else if (m_ui.colorizeSystemIcons->isChecked() != m_internalSettings->colorizeSystemIcons())
+        modified = true;
+    else if (m_ui.lockTitleBarTopBottomMargins->isChecked() != m_internalSettings->lockTitleBarTopBottomMargins())
+        modified = true;
+    else if (m_ui.lockTitleBarLeftRightMargins->isChecked() != m_internalSettings->lockTitleBarLeftRightMargins())
+        modified = true;
+    else if (m_ui.lockButtonSpacingLeftRight->isChecked() != m_internalSettings->lockButtonSpacingLeftRight())
+        modified = true;
+    else if (m_ui.lockFullHeightButtonWidthMargins->isChecked() != m_internalSettings->lockFullHeightButtonWidthMargins())
         modified = true;
     else if (m_ui.titleAlignment->currentIndex() != m_internalSettings->titleAlignment())
         modified = true;
@@ -437,11 +497,17 @@ void ConfigWidget::updateChanged()
         modified = true;
     else if (m_ui.buttonSpacingLeft->value() != m_internalSettings->buttonSpacingLeft())
         modified = true;
-    else if (m_ui.titlebarTopBottomMargins->value() != m_internalSettings->titlebarTopBottomMargins())
+    else if (m_ui.titleSidePadding->value() != m_internalSettings->titleSidePadding())
+        modified = true;
+    else if (m_ui.titlebarTopMargin->value() != m_internalSettings->titlebarTopMargin())
+        modified = true;
+    else if (m_ui.titlebarBottomMargin->value() != m_internalSettings->titlebarBottomMargin())
         modified = true;
     else if (m_ui.percentMaximizedTopBottomMargins->value() != m_internalSettings->percentMaximizedTopBottomMargins())
         modified = true;
-    else if (m_ui.titlebarSideMargins->value() != m_internalSettings->titlebarSideMargins())
+    else if (m_ui.titlebarLeftMargin->value() != m_internalSettings->titlebarLeftMargin())
+        modified = true;
+    else if (m_ui.titlebarRightMargin->value() != m_internalSettings->titlebarRightMargin())
         modified = true;
     else if (m_ui.cornerRadius->value() != m_internalSettings->cornerRadius())
         modified = true;
@@ -480,6 +546,8 @@ void ConfigWidget::updateChanged()
     else if (m_ui.thinWindowOutlineCustomColor->color() != m_internalSettings->thinWindowOutlineCustomColor())
         modified = true;
     else if (m_ui.thinWindowOutlineThickness->value() != m_internalSettings->thinWindowOutlineThickness())
+        modified = true;
+    else if (m_ui.colorizeThinWindowOutlineWithButton->isChecked() != m_internalSettings->colorizeThinWindowOutlineWithButton())
         modified = true;
 
     // exceptions
@@ -541,7 +609,8 @@ void ConfigWidget::updateIconsStackedWidgetVisible()
 void ConfigWidget::updateBackgroundShapeStackedWidgetVisible()
 {
     if (m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
-        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
+        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
+        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(1);
     else
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(0);
@@ -554,6 +623,54 @@ void ConfigWidget::updateCustomColorStackedWidgetVisible()
         m_ui.customColorStackedWidget->setCurrentIndex(1);
     else
         m_ui.customColorStackedWidget->setCurrentIndex(0);
+}
+
+void ConfigWidget::fullHeightButtonWidthMarginLeftChanged()
+{
+    if (m_ui.lockFullHeightButtonWidthMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.fullHeightButtonWidthMarginRight->setValue(m_ui.fullHeightButtonWidthMarginLeft->value());
+}
+
+void ConfigWidget::fullHeightButtonWidthMarginRightChanged()
+{
+    if (m_ui.lockFullHeightButtonWidthMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.fullHeightButtonWidthMarginLeft->setValue(m_ui.fullHeightButtonWidthMarginRight->value());
+}
+
+void ConfigWidget::titlebarTopMarginChanged()
+{
+    if (m_ui.lockTitleBarTopBottomMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.titlebarBottomMargin->setValue(m_ui.titlebarTopMargin->value());
+}
+
+void ConfigWidget::titlebarBottomMarginChanged()
+{
+    if (m_ui.lockTitleBarTopBottomMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.titlebarTopMargin->setValue(m_ui.titlebarBottomMargin->value());
+}
+
+void ConfigWidget::titlebarLeftMarginChanged()
+{
+    if (m_ui.lockTitleBarLeftRightMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.titlebarRightMargin->setValue(m_ui.titlebarLeftMargin->value());
+}
+
+void ConfigWidget::titlebarRightMarginChanged()
+{
+    if (m_ui.lockTitleBarLeftRightMargins->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.titlebarLeftMargin->setValue(m_ui.titlebarRightMargin->value());
+}
+
+void ConfigWidget::buttonSpacingLeftChanged()
+{
+    if (m_ui.lockButtonSpacingLeftRight->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.buttonSpacingRight->setValue(m_ui.buttonSpacingLeft->value());
+}
+
+void ConfigWidget::buttonSpacingRightChanged()
+{
+    if (m_ui.lockButtonSpacingLeftRight->isChecked() && !m_processingDefaults && !m_loading)
+        m_ui.buttonSpacingLeft->setValue(m_ui.buttonSpacingRight->value());
 }
 
 void ConfigWidget::getTitlebarOpacityFromColorScheme()

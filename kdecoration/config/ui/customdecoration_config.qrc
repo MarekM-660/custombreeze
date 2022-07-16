@@ -6,5 +6,7 @@
     <file>custom_config_icons/Redmond.png</file>
     <file>custom_config_icons/Redmond10.png</file>
     <file>custom_config_icons/Classik_logo.svg</file>
+    <file>custom_config_icons/object-locked-symbolic.svg</file>
+    <file>custom_config_icons/object-unlocked-symbolic.svg</file>
 </qresource>
 </RCC>

@@ -39,14 +39,6 @@
 #include <QTextStream>
 #include <QTimer>
 
-#if BREEZE_HAVE_X11
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <private/qtx11extras_p.h>
-#else
-#include <QX11Info>
-#endif
-#endif
-
 #include <cmath>
 
 K_PLUGIN_FACTORY_WITH_JSON(BreezeDecoFactory, "breeze.json", registerPlugin<Breeze::Decoration>(); registerPlugin<Breeze::Button>();
@@ -155,6 +147,8 @@ Decoration::Decoration(QObject *parent, const QVariantList &args)
     : KDecoration2::Decoration(parent, args)
     , m_animation(new QVariantAnimation(this))
     , m_shadowAnimation(new QVariantAnimation(this))
+    , m_overrideOutlineFromButtonAnimation(new QVariantAnimation(this))
+
 {
     g_sDecoCount++;
 
@@ -300,6 +294,50 @@ QColor Decoration::fontMixedAccentWindowOutlineColor(QColor customColor) const
         return inactiveColor;
 }
 
+QColor Decoration::overriddenOutlineColorAnimateIn() const
+{
+    QColor color = m_thinWindowOutlineOverride;
+    if (m_overrideOutlineFromButtonAnimation->state() == QAbstractAnimation::Running) {
+        auto c = client().toStrongRef();
+        Q_ASSERT(c);
+        QColor originalColor;
+        c->isActive() ? originalColor = m_originalThinWindowOutlineActivePreOverride : originalColor = m_originalThinWindowOutlineInactivePreOverride;
+
+        if (originalColor.isValid())
+            return KColorUtils::mix(originalColor, color, m_overrideOutlineAnimationProgress);
+        else {
+            color.setAlphaF(color.alphaF() * m_overrideOutlineAnimationProgress);
+            return color;
+        }
+    } else
+        return color;
+}
+
+QColor Decoration::overriddenOutlineColorAnimateOut(const QColor &destinationColor)
+{
+    if (m_overrideOutlineFromButtonAnimation->state() == QAbstractAnimation::Running) {
+        auto c = client().toStrongRef();
+        Q_ASSERT(c);
+        QColor originalColor;
+        c->isActive() ? originalColor = m_originalThinWindowOutlineActivePreOverride : originalColor = m_originalThinWindowOutlineInactivePreOverride;
+
+        if (originalColor.isValid()) {
+            if (m_overrideOutlineAnimationProgress == 1)
+                m_animateOutOverriddenThinWindowOutline = false;
+            return KColorUtils::mix(originalColor, destinationColor, m_overrideOutlineAnimationProgress);
+        } else {
+            QColor color = destinationColor;
+            color.setAlphaF(destinationColor.alphaF() * m_overrideOutlineAnimationProgress);
+            if (m_overrideOutlineAnimationProgress == 1)
+                m_animateOutOverriddenThinWindowOutline = false;
+            return color;
+        }
+    } else {
+        m_animateOutOverriddenThinWindowOutline = false;
+        return destinationColor;
+    }
+}
+
 //________________________________________________________________
 QColor Decoration::fontColor() const
 {
@@ -332,6 +370,14 @@ void Decoration::init()
     connect(m_shadowAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
         m_shadowOpacity = value.toReal();
         updateShadow();
+    });
+
+    m_overrideOutlineFromButtonAnimation->setStartValue(0.0);
+    m_overrideOutlineFromButtonAnimation->setEndValue(1.0);
+    m_overrideOutlineFromButtonAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+    connect(m_overrideOutlineFromButtonAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant &value) {
+        m_overrideOutlineAnimationProgress = value.toReal();
+        updateShadow(true, true);
     });
 
     // use DBus connection to update on breeze configuration change
@@ -435,23 +481,23 @@ void Decoration::updateTitleBar()
 
     // prevents resize handles appearing in button at top window edge for large full-height buttons
     if (m_buttonBackgroundType == ButtonBackgroundType::FullHeight && !(m_internalSettings->drawBorderOnMaximizedWindows() && c->isMaximizedVertically())) {
-        width = maximized ? c->width() : c->width() - 2 * m_scaledTitleBarSideMargins;
+        width = maximized ? c->width() : c->width() - m_scaledTitleBarLeftMargin - m_scaledTitleBarRightMargin;
         height = borderTop();
-        x = maximized ? 0 : m_scaledTitleBarSideMargins;
+        x = maximized ? 0 : m_scaledTitleBarLeftMargin;
         y = 0;
 
     } else {
         // for smaller circular buttons increase the resizable area
-        width = maximized ? c->width() : c->width() - 2 * m_scaledTitleBarSideMargins;
+        width = maximized ? c->width() : c->width() - m_scaledTitleBarLeftMargin - m_scaledTitleBarRightMargin;
         height = maximized ? borderTop() : borderTop() - m_scaledTitleBarTopMargin;
-        x = maximized ? 0 : m_scaledTitleBarSideMargins;
+        x = maximized ? 0 : m_scaledTitleBarLeftMargin;
         y = maximized ? 0 : m_scaledTitleBarTopMargin;
     }
 
     setTitleBar(QRect(x, y, width, height));
 }
 
-//________________________________________________________________
+// For Titlebar active state and shadow animations only
 void Decoration::updateAnimationState()
 {
     if (m_shadowAnimation->duration() > 0) {
@@ -475,6 +521,22 @@ void Decoration::updateAnimationState()
 
     } else {
         update();
+    }
+}
+
+// For overrididng thin window outline with button colour
+void Decoration::updateOverrideOutlineFromButtonAnimationState()
+{
+    if (m_overrideOutlineFromButtonAnimation->duration() > 0) {
+        auto c = client().toStrongRef();
+        Q_ASSERT(c);
+        m_overrideOutlineFromButtonAnimation->setDirection(QAbstractAnimation::Forward);
+        m_overrideOutlineFromButtonAnimation->setEasingCurve(QEasingCurve::InOutQuad);
+        if (m_overrideOutlineFromButtonAnimation->state() != QAbstractAnimation::Running)
+            m_overrideOutlineFromButtonAnimation->start();
+
+    } else {
+        updateShadow(true, true);
     }
 }
 
@@ -557,7 +619,8 @@ void Decoration::reconfigure()
     setSystemAccentColors();
 
     if (m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
-        || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
+        || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
+        || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
         m_buttonBackgroundType = ButtonBackgroundType::FullHeight;
     else
         m_buttonBackgroundType = ButtonBackgroundType::Small;
@@ -579,10 +642,12 @@ void Decoration::reconfigure()
         else if (m_internalSettings->animationsSpeedRelativeSystem() > 0)
             animationsDurationFactorRelativeSystem = 1 / ((m_internalSettings->animationsSpeedRelativeSystem() + 2) / 2.0f);
         m_animation->setDuration(cg.readEntry("AnimationDurationFactor", 1.0f) * 150.0f * animationsDurationFactorRelativeSystem);
-        m_shadowAnimation->setDuration(cg.readEntry("AnimationDurationFactor", 1.0f) * 150.0f * animationsDurationFactorRelativeSystem);
+        m_shadowAnimation->setDuration(m_animation->duration());
+        m_overrideOutlineFromButtonAnimation->setDuration(m_animation->duration());
     } else {
         m_animation->setDuration(0);
         m_shadowAnimation->setDuration(0);
+        m_overrideOutlineFromButtonAnimation->setDuration(0);
     }
 
     setAddedTitleBarOpacity();
@@ -601,7 +666,6 @@ void Decoration::reconfigure()
         createSizeGrip();
     else
         deleteSizeGrip();
-    ;
 }
 
 //________________________________________________________________
@@ -634,7 +698,8 @@ void Decoration::recalculateBorders()
 
     // extended sizes
     const int extSize = s->largeSpacing();
-    int extSides = 0;
+    int extLeft = 0;
+    int extRight = 0;
     int extBottom = 0;
     int extTop = 0;
 
@@ -645,17 +710,26 @@ void Decoration::recalculateBorders()
     }
 
     if (hasNoBorders()) {
-        if (!isMaximizedHorizontally())
-            extSides = extSize;
-        if (!isMaximizedVertically()) {
-            extBottom = extSize;
+        if (!isMaximizedHorizontally()) {
+            extLeft = extSize;
+            extRight = extSize;
         }
+        if (!isMaximizedVertically())
+            extBottom = extSize;
 
-    } else if ((hasNoSideBorders() || (m_internalSettings->titlebarSideMargins() == 0)) && !isMaximizedHorizontally()) {
-        extSides = extSize;
+    } else if (!isMaximizedHorizontally()) {
+        if (hasNoSideBorders()) {
+            extLeft = extSize;
+            extRight = extSize;
+        } else {
+            if (m_internalSettings->titlebarLeftMargin() == 0)
+                extLeft = extSize;
+            if (m_internalSettings->titlebarRightMargin() == 0)
+                extRight = extSize;
+        }
     }
 
-    setResizeOnlyBorders(QMargins(extSides, extTop, extSides, extBottom));
+    setResizeOnlyBorders(QMargins(extLeft, extTop, extRight, extBottom));
 }
 
 //________________________________________________________________
@@ -701,6 +775,10 @@ void Decoration::updateButtonsGeometry()
         verticalIconOffset = (isTopEdge() ? m_scaledTitleBarTopMargin : 0) + (captionHeight() - smallButtonPaddedHeight) / 2;
     }
 
+    int leftmostLeftVisibleIndex = -1;
+    int rightmostLeftVisibleIndex = -1;
+    int i = 0;
+
     foreach (const QPointer<KDecoration2::DecorationButton> &button, m_leftButtons->buttons()) {
         if (m_buttonBackgroundType == ButtonBackgroundType::FullHeight) {
             bWidth = smallButtonPaddedHeight + s->smallSpacing() * m_internalSettings->fullHeightButtonWidthMarginLeft();
@@ -715,8 +793,27 @@ void Decoration::updateButtonsGeometry()
         static_cast<Button *>(button.data())->setIconOffset(QPointF(horizontalIconOffsetLeftButtons, verticalIconOffset));
         static_cast<Button *>(button.data())->setSmallButtonPaddedSize(QSize(smallButtonPaddedWidth, smallButtonPaddedWidth));
         static_cast<Button *>(button.data())->setIconSize(QSizeF(iconHeight, iconHeight));
+
+        // determine leftmost left visible and rightmostLeftVisible
+        if (static_cast<Button *>(button.data())->isVisible() && static_cast<Button *>(button.data())->isEnabled()) {
+            if (leftmostLeftVisibleIndex == -1)
+                leftmostLeftVisibleIndex = i;
+            rightmostLeftVisibleIndex = i;
+        }
+
+        ++i;
     }
 
+    if (leftmostLeftVisibleIndex != -1) {
+        static_cast<Button *>(m_leftButtons->buttons()[leftmostLeftVisibleIndex].data())->setLeftmostLeftVisible();
+    }
+    if (rightmostLeftVisibleIndex != -1) {
+        static_cast<Button *>(m_leftButtons->buttons()[rightmostLeftVisibleIndex].data())->setRightmostLeftVisible();
+    }
+
+    int leftmostRightVisibleIndex = -1;
+    int rightmostRightVisibleIndex = -1;
+    i = 0;
     foreach (const QPointer<KDecoration2::DecorationButton> &button, m_rightButtons->buttons()) {
         if (m_buttonBackgroundType == ButtonBackgroundType::FullHeight) {
             bWidth = smallButtonPaddedHeight + s->smallSpacing() * m_internalSettings->fullHeightButtonWidthMarginRight();
@@ -731,10 +828,26 @@ void Decoration::updateButtonsGeometry()
         static_cast<Button *>(button.data())->setIconOffset(QPointF(horizontalIconOffsetRightButtons, verticalIconOffset));
         static_cast<Button *>(button.data())->setSmallButtonPaddedSize(QSize(smallButtonPaddedWidth, smallButtonPaddedWidth));
         static_cast<Button *>(button.data())->setIconSize(QSizeF(iconHeight, iconHeight));
+
+        // determine leftmost right visible and rightmostRightVisible
+        if (static_cast<Button *>(button.data())->isVisible() && static_cast<Button *>(button.data())->isEnabled()) {
+            if (leftmostRightVisibleIndex == -1)
+                leftmostRightVisibleIndex = i;
+            rightmostRightVisibleIndex = i;
+        }
+
+        ++i;
+    }
+
+    if (leftmostRightVisibleIndex != -1) {
+        static_cast<Button *>(m_rightButtons->buttons()[leftmostRightVisibleIndex].data())->setLeftmostRightVisible();
+    }
+    if (rightmostRightVisibleIndex != -1) {
+        static_cast<Button *>(m_rightButtons->buttons()[rightmostRightVisibleIndex].data())->setRightmostRightVisible();
     }
 
     // left buttons
-    if (!m_leftButtons->buttons().isEmpty()) {
+    if (!m_leftButtons->buttons().isEmpty() && leftmostLeftVisibleIndex != -1) {
         // spacing
         m_leftButtons->setSpacing(s->smallSpacing() * m_internalSettings->buttonSpacingLeft());
 
@@ -744,15 +857,15 @@ void Decoration::updateButtonsGeometry()
             vPadding = 0;
         else
             vPadding = isTopEdge() ? 0 : m_scaledTitleBarTopMargin;
-        const int hPadding = m_scaledTitleBarSideMargins;
+        const int hPadding = m_scaledTitleBarLeftMargin;
 
-        auto firstButton = static_cast<Button *>(m_leftButtons->buttons().front().data());
+        auto firstButton = static_cast<Button *>(m_leftButtons->buttons()[leftmostLeftVisibleIndex].data());
+        firstButton->setFlag(Button::FlagFirstInList);
         if (isLeftEdge()) {
             // add offsets on the side buttons, to preserve padding, but satisfy Fitts law
             firstButton->setGeometry(QRectF(QPoint(0, 0), QSizeF(firstButton->geometry().width() + hPadding, firstButton->geometry().height())));
             firstButton->setHorizontalIconOffset(horizontalIconOffsetLeftButtons + hPadding);
             firstButton->setFullHeightVisibleBackgroundOffset(QPointF(hPadding, 0));
-            firstButton->setFlag(Button::FlagFirstInList);
 
             m_leftButtons->setPos(QPointF(0, vPadding));
 
@@ -763,7 +876,7 @@ void Decoration::updateButtonsGeometry()
     }
 
     // right buttons
-    if (!m_rightButtons->buttons().isEmpty()) {
+    if (!m_rightButtons->buttons().isEmpty() && rightmostRightVisibleIndex != -1) {
         // spacing
         m_rightButtons->setSpacing(s->smallSpacing() * m_internalSettings->buttonSpacingRight());
 
@@ -773,12 +886,12 @@ void Decoration::updateButtonsGeometry()
             vPadding = 0;
         else
             vPadding = isTopEdge() ? 0 : m_scaledTitleBarTopMargin;
-        const int hPadding = m_scaledTitleBarSideMargins;
+        const int hPadding = m_scaledTitleBarRightMargin;
 
-        auto lastButton = static_cast<Button *>(m_rightButtons->buttons().back().data());
+        auto lastButton = static_cast<Button *>(m_rightButtons->buttons()[rightmostRightVisibleIndex].data());
+        lastButton->setFlag(Button::FlagLastInList);
         if (isRightEdge()) {
             lastButton->setGeometry(QRectF(QPoint(0, 0), QSizeF(lastButton->geometry().width() + hPadding, lastButton->geometry().height())));
-            lastButton->setFlag(Button::FlagLastInList);
 
             m_rightButtons->setPos(QPointF(size().width() - m_rightButtons->geometry().width(), vPadding));
 
@@ -830,6 +943,25 @@ void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
     if (!hideTitleBar()) {
         paintTitleBar(painter, repaintRegion);
     }
+
+    // draw highlighted button state outline for maximized windows
+    // does not work as cannot draw inside window contents
+    /*
+    if(c->isMaximized() && m_maximizedWindowHighlight.isValid()){
+        painter->save();
+        QPen pen(m_maximizedWindowHighlight);
+        qreal penWidthNoDpr = PenWidth::Symbol *2;
+        qreal dpr = devicePixelRatio(painter);
+        pen.setWidthF(dpr * penWidthNoDpr);
+        pen.setCosmetic(true);
+        painter->setPen(pen);
+        qreal shrinkOffset = penWidthNoDpr/2;
+        if(KWindowSystem::isPlatformX11())
+            shrinkOffset *= dpr;
+        QRectF windowRectShrunk = m_windowPath->boundingRect().adjusted(shrinkOffset,shrinkOffset,-shrinkOffset,-shrinkOffset);
+        painter->drawRect(windowRectShrunk);
+        painter->restore();
+    } */
 
     if (hasBorders() && !s->isAlphaChannelSupported()) {
         painter->save();
@@ -1055,19 +1187,7 @@ QPair<QRect, Qt::Alignment> Decoration::captionRect() const
         auto c = client().toStrongRef();
         Q_ASSERT(c);
 
-        // determine padding of title caption using other padding values
-        int leftButtonPadding = settings()->smallSpacing() * m_internalSettings->buttonSpacingLeft();
-        int rightButtonPadding = settings()->smallSpacing() * m_internalSettings->buttonSpacingRight();
-        if (m_buttonBackgroundType == ButtonBackgroundType::FullHeight) {
-            leftButtonPadding += settings()->smallSpacing() * m_internalSettings->fullHeightButtonWidthMarginLeft();
-            rightButtonPadding += settings()->smallSpacing() * m_internalSettings->fullHeightButtonWidthMarginRight();
-        }
-
-        int padding = 0;
-        if (leftButtonPadding == 0 || rightButtonPadding == 0)
-            padding = qMax(leftButtonPadding, rightButtonPadding);
-        else
-            padding = qMin(leftButtonPadding, rightButtonPadding);
+        int padding = m_internalSettings->titleSidePadding() * settings()->smallSpacing();
 
         const int leftOffset = m_leftButtons->buttons().isEmpty() ? padding : m_leftButtons->geometry().x() + m_leftButtons->geometry().width() + padding;
 
@@ -1109,12 +1229,11 @@ QPair<QRect, Qt::Alignment> Decoration::captionRect() const
 }
 
 //________________________________________________________________
-void Decoration::updateShadow(const bool force)
+void Decoration::updateShadow(const bool force, const bool noCache)
 {
     auto s = settings();
     auto c = client().toStrongRef();
     Q_ASSERT(c);
-
     // Animated case, no cached shadow object
     if ((m_shadowAnimation->state() == QAbstractAnimation::Running) && (m_shadowOpacity != 0.0) && (m_shadowOpacity != 1.0)) {
         setShadow(createShadowObject(0.5 + m_shadowOpacity * 0.5));
@@ -1127,24 +1246,34 @@ void Decoration::updateShadow(const bool force)
         || g_thinWindowOutlineStyle != m_internalSettings->thinWindowOutlineStyle()
         || g_thinWindowOutlineCustomColor != m_internalSettings->thinWindowOutlineCustomColor()
         || g_thinWindowOutlineThickness != m_internalSettings->thinWindowOutlineThickness()) {
-        g_sShadow.clear();
-        g_sShadowInactive.clear();
-        g_shadowSizeEnum = m_internalSettings->shadowSize();
-        g_shadowStrength = m_internalSettings->shadowStrength();
-        g_shadowColor = m_internalSettings->shadowColor();
-        g_cornerRadius = m_scaledCornerRadius;
-        g_systemScaleFactor = m_systemScaleFactor;
-        g_hasNoBorders = hasNoBorders();
-        g_thinWindowOutlineStyle = m_internalSettings->thinWindowOutlineStyle();
-        g_thinWindowOutlineCustomColor = m_internalSettings->thinWindowOutlineCustomColor();
-        g_thinWindowOutlineThickness = m_internalSettings->thinWindowOutlineThickness();
+        if (!noCache) {
+            g_sShadow.clear();
+            g_sShadowInactive.clear();
+            g_shadowSizeEnum = m_internalSettings->shadowSize();
+            g_shadowStrength = m_internalSettings->shadowStrength();
+            g_shadowColor = m_internalSettings->shadowColor();
+            g_cornerRadius = m_scaledCornerRadius;
+            g_systemScaleFactor = m_systemScaleFactor;
+            g_hasNoBorders = hasNoBorders();
+            g_thinWindowOutlineStyle = m_internalSettings->thinWindowOutlineStyle();
+            g_thinWindowOutlineCustomColor = m_internalSettings->thinWindowOutlineCustomColor();
+            g_thinWindowOutlineThickness = m_internalSettings->thinWindowOutlineThickness();
+        }
     }
 
-    auto &shadow = (c->isActive()) ? g_sShadow : g_sShadowInactive;
-    if (!shadow) {
-        shadow = createShadowObject(c->isActive() ? 1.0 : 0.5);
+    QSharedPointer<KDecoration2::DecorationShadow> nonCachedShadow;
+    QSharedPointer<KDecoration2::DecorationShadow> *shadow = nullptr;
+
+    if (noCache)
+        shadow = &nonCachedShadow;
+    else // use the already cached shadow
+        shadow = (c->isActive()) ? &g_sShadow : &g_sShadowInactive;
+
+    if (!(*shadow)) { // only recreate the shadow if necessary
+        *shadow = createShadowObject(c->isActive() ? 1.0 : 0.5);
     }
-    setShadow(shadow);
+
+    setShadow(*shadow);
 }
 
 //________________________________________________________________
@@ -1248,18 +1377,37 @@ QSharedPointer<KDecoration2::DecorationShadow> Decoration::createShadowObject(co
 
         // Draw Thin window outline
         QPen p;
-        if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineContrastTitleBarText)
-            p.setColor(withOpacity(fontColor(), 0.25));
+        QColor thinWindowOutlineColor;
+        if (m_thinWindowOutlineOverride.isValid()) {
+            thinWindowOutlineColor = overriddenOutlineColorAnimateIn();
+        } else if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineContrastTitleBarText)
+            thinWindowOutlineColor = withOpacity(fontColor(), 0.25);
         else if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineAccentColor)
-            p.setColor(accentedWindowOutlineColor());
+            thinWindowOutlineColor = accentedWindowOutlineColor();
         else if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineAccentWithContrast)
-            p.setColor(fontMixedAccentWindowOutlineColor());
+            thinWindowOutlineColor = fontMixedAccentWindowOutlineColor();
         else if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineCustomColor)
-            p.setColor(accentedWindowOutlineColor(m_internalSettings->thinWindowOutlineCustomColor()));
+            thinWindowOutlineColor = accentedWindowOutlineColor(m_internalSettings->thinWindowOutlineCustomColor());
         else if (m_internalSettings->thinWindowOutlineStyle() == InternalSettings::EnumThinWindowOutlineStyle::WindowOutlineCustomWithContrast)
-            p.setColor(fontMixedAccentWindowOutlineColor(m_internalSettings->thinWindowOutlineCustomColor()));
+            thinWindowOutlineColor = fontMixedAccentWindowOutlineColor(m_internalSettings->thinWindowOutlineCustomColor());
         else
-            p.setColor(withOpacity(m_internalSettings->shadowColor(), 0.2 * strength)); // blend to shadow
+            thinWindowOutlineColor = withOpacity(m_internalSettings->shadowColor(), 0.2 * strength); // blend to shadow
+
+        if (m_animateOutOverriddenThinWindowOutline)
+            thinWindowOutlineColor = overriddenOutlineColorAnimateOut(thinWindowOutlineColor);
+
+        p.setColor(thinWindowOutlineColor);
+
+        // the existing thin window outline colour is stored in-case it is overridden in the future and needed by an animation
+        if (!m_thinWindowOutlineOverride.isValid()) { // non-override
+            c->isActive() ? m_originalThinWindowOutlineActivePreOverride = thinWindowOutlineColor
+                          : m_originalThinWindowOutlineInactivePreOverride = thinWindowOutlineColor;
+        } else if ((m_overrideOutlineFromButtonAnimation->state() == QAbstractAnimation::Running) && m_overrideOutlineAnimationProgress == 1) {
+            // only buffer the override colour once it has finished animating -- used for the override out animation, and when mouse moves from one overrride
+            // colour to another
+            c->isActive() ? m_originalThinWindowOutlineActivePreOverride = thinWindowOutlineColor
+                          : m_originalThinWindowOutlineInactivePreOverride = thinWindowOutlineColor;
+        }
 
         p.setWidthF(outlinePenWidth);
         painter.setPen(p);
@@ -1290,6 +1438,41 @@ QSharedPointer<KDecoration2::DecorationShadow> Decoration::createShadowObject(co
     return ret;
 }
 
+void Decoration::setThinWindowOutlineOverrideColor(const bool on, const QColor &color)
+{
+    auto c = client().toStrongRef();
+    Q_ASSERT(c);
+
+    if (on) {
+        if (c->isMaximized()) {
+            /* Attempt here to extend "Highlight button state in thin window outline to maximized windows
+                * by drawing an outline around the perimeter of a maximized window.
+                * Does not work as cannot draw inside window borders
+            m_maximizedWindowHighlight = color;
+            update();
+            */
+        } else {
+            // draw a thin window outline with this override colour
+            m_thinWindowOutlineOverride = color;
+            updateOverrideOutlineFromButtonAnimationState();
+        }
+    } else {
+        if (c->isMaximized()) {
+            /* Attempt here to extend "Highlight button state in thin window outline to maximized windows
+                * by drawing an outline around the perimeter of a maximized window.
+                * Does not work as cannot draw inside window borders
+            m_maximizedWindowHighlight = QColor();
+            update();
+            */
+        } else {
+            // reset the thin window outline
+            m_thinWindowOutlineOverride = QColor();
+            m_animateOutOverriddenThinWindowOutline = true;
+            updateOverrideOutlineFromButtonAnimationState();
+        }
+    }
+}
+
 //_________________________________________________________________
 void Decoration::createSizeGrip()
 {
@@ -1297,8 +1480,7 @@ void Decoration::createSizeGrip()
     if (m_sizeGrip)
         return;
 
-#if BREEZE_HAVE_X11
-    if (!QX11Info::isPlatformX11())
+    if (!KWindowSystem::isPlatformX11())
         return;
 
     // access client
@@ -1313,7 +1495,6 @@ void Decoration::createSizeGrip()
         connect(c.data(), &KDecoration2::DecoratedClient::shadedChanged, this, &Decoration::updateSizeGripVisibility);
         connect(c.data(), &KDecoration2::DecoratedClient::resizeableChanged, this, &Decoration::updateSizeGripVisibility);
     }
-#endif
 }
 
 //_________________________________________________________________
@@ -1331,25 +1512,31 @@ void Decoration::setScaledTitleBarTopBottomMargins()
     auto c = client().toStrongRef();
     Q_ASSERT(c);
 
-    qreal topBottomMargins;
+    qreal topMargin = m_internalSettings->titlebarTopMargin();
+    qreal bottomMargin = m_internalSettings->titlebarBottomMargin();
+
     if (c->isMaximized()) {
-        topBottomMargins = m_internalSettings->titlebarTopBottomMargins() * m_internalSettings->percentMaximizedTopBottomMargins() / 100;
-    } else {
-        topBottomMargins = m_internalSettings->titlebarTopBottomMargins();
+        qreal maximizedScaleFactor = qreal(m_internalSettings->percentMaximizedTopBottomMargins()) / 100;
+        topMargin *= maximizedScaleFactor;
+        bottomMargin *= maximizedScaleFactor;
     }
 
-    m_scaledTitleBarTopMargin = int(settings()->smallSpacing() * topBottomMargins);
-    m_scaledTitleBarBottomMargin = m_scaledTitleBarTopMargin;
+    m_scaledTitleBarTopMargin = int(settings()->smallSpacing() * topMargin);
+    m_scaledTitleBarBottomMargin = int(settings()->smallSpacing() * bottomMargin);
 }
 
 void Decoration::setScaledTitleBarSideMargins()
 {
-    m_scaledTitleBarSideMargins = int(qreal(m_internalSettings->titlebarSideMargins()) * qreal(settings()->smallSpacing()));
+    m_scaledTitleBarLeftMargin = int(qreal(m_internalSettings->titlebarLeftMargin()) * qreal(settings()->smallSpacing()));
+    m_scaledTitleBarRightMargin = int(qreal(m_internalSettings->titlebarRightMargin()) * qreal(settings()->smallSpacing()));
 
-    // subtract any added margins from the side margin so the user doesn't need to adjust the side margins when changing border size
+    // subtract any added borders from the side margin so the user doesn't need to adjust the side margins when changing border size
     // this makes the side margin relative to the border edge rather than the titlebar edge
-    if (!isMaximizedHorizontally())
-        m_scaledTitleBarSideMargins -= this->borderSize(false);
+    if (!isMaximizedHorizontally()) {
+        int borderSize = this->borderSize(false);
+        m_scaledTitleBarLeftMargin -= borderSize;
+        m_scaledTitleBarRightMargin -= borderSize;
+    }
 }
 
 void Decoration::setAddedTitleBarOpacity()
@@ -1433,6 +1620,17 @@ qreal Decoration::titleBarSeparatorHeight() const
         return 1;
     } else
         return 0;
+}
+
+qreal Decoration::devicePixelRatio(QPainter *painter) const
+{
+    // determine DPR
+    qreal dpr = painter->device()->devicePixelRatioF();
+
+    // on X11 Kwin just returns 1.0 for the DPR instead of the correct value, so use the scaling setting directly
+    if (KWindowSystem::isPlatformX11())
+        dpr = systemScaleFactor();
+    return dpr;
 }
 
 } // namespace

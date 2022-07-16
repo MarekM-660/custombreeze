@@ -12,6 +12,7 @@
 #include <KColorScheme>
 #include <KColorUtils>
 #include <KDecoration2/DecoratedClient>
+#include <KDecoration2/DecorationButtonGroup>
 #include <KIconLoader>
 #include <KWindowSystem>
 
@@ -65,6 +66,8 @@ Button::Button(DecorationButtonType type, Decoration *decoration, QObject *paren
     connect(c.data(), SIGNAL(iconChanged(QIcon)), this, SLOT(update()));
     connect(decoration->settings().data(), &KDecoration2::DecorationSettings::reconfigured, this, &Button::reconfigure);
     connect(this, &KDecoration2::DecorationButton::hoveredChanged, this, &Button::updateAnimationState);
+    connect(this, &KDecoration2::DecorationButton::hoveredChanged, this, &Button::updateThinWindowOutlineWithButtonColor);
+    connect(this, &KDecoration2::DecorationButton::pressedChanged, this, &Button::updateThinWindowOutlineWithButtonColor);
 
     reconfigure();
 }
@@ -403,7 +406,7 @@ QColor Button::foregroundColor() const
 }
 
 //__________________________________________________________________
-QColor Button::backgroundColor() const
+QColor Button::backgroundColor(bool getNonAnimatedColor) const
 {
     auto d = qobject_cast<Decoration *>(decoration());
     if (!d) {
@@ -540,7 +543,7 @@ QColor Button::backgroundColor() const
                && (d->internalSettings()->backgroundColors() == InternalSettings::EnumBackgroundColors::ColorsAccent
                    || d->internalSettings()->backgroundColors() == InternalSettings::EnumBackgroundColors::ColorsAccentWithTrafficLights)) {
         return buttonFocusColor;
-    } else if (m_animation->state() == QAbstractAnimation::Running) {
+    } else if (m_animation->state() == QAbstractAnimation::Running && !getNonAnimatedColor) {
         if (type() == DecorationButtonType::Close) {
             if (d->internalSettings()->alwaysShow() == InternalSettings::EnumAlwaysShow::AlwaysShowIconsAndHighlightedCloseButton) {
                 return KColorUtils::mix(buttonAlwaysShowColor, buttonHoverColor, m_opacity);
@@ -675,6 +678,35 @@ void Button::updateAnimationState(bool hovered)
         m_animation->start();
 }
 
+void Button::updateThinWindowOutlineWithButtonColor(bool on)
+{
+    auto d = qobject_cast<Decoration *>(decoration());
+    if (!d || !d->internalSettings()->colorizeThinWindowOutlineWithButton() || isStandAlone())
+        return;
+
+    QColor color = QColor();
+    if (on) {
+        color = this->backgroundColor(true);
+        d->setThinWindowOutlineOverrideColor(on, color);
+    } else {
+        bool otherButtonIsHoveredOrPressed = false;
+
+        // Check if any other button is hovered/pressed.
+        // This is to prevent glitches when you directly mouse over one button to another and the second button does not trigger on.
+        // In the case where another button is hovered/pressed do not send an off flag.
+        for (QPointer<KDecoration2::DecorationButton> &decButton : d->leftButtons()->buttons() + d->rightButtons()->buttons()) {
+            Button *button = static_cast<Button *>(decButton.data());
+
+            if (button != this && (button->isHovered() || button->isPressed())) {
+                otherButtonIsHoveredOrPressed = true;
+                break;
+            }
+        }
+        if (!otherButtonIsHoveredOrPressed)
+            d->setThinWindowOutlineOverrideColor(on, color);
+    }
+}
+
 bool Button::shouldDrawBackgroundStroke() const
 {
     auto d = qobject_cast<Decoration *>(decoration());
@@ -696,52 +728,145 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
 
         painter->save();
         painter->translate(m_fullHeightVisibleBackgroundOffset);
-        painter->setBrush(m_backgroundColor);
 
-        const QRectF backgroundBoundingRect = (QRectF(geometry().topLeft(), m_backgroundVisibleSize));
+        QRectF backgroundBoundingRect = (QRectF(geometry().topLeft(), m_backgroundVisibleSize));
         QPainterPath background;
+        QPainterPath outline;
+        painter->setPen(Qt::NoPen);
+
+        bool drawOutline = false;
+        bool drawOutlineUsingPath = false;
 
         if (shouldDrawBackgroundStroke()) {
+            QRectF innerRect;
+            QRectF outerRect;
             if (m_outlineColor.isValid()) {
-                QPen pen(m_outlineColor);
-                pen.setWidthF(m_standardScaledPenWidth);
-                pen.setCosmetic(true);
-                painter->setPen(pen);
-            } else {
-                painter->setPen(Qt::NoPen); // this is for the case when you still want to shrink the button but don't want an outline e.g. with always show
-                                            // highlighted close button and not hovered/pressed
+                drawOutline = true;
             }
+            // drawOutline=false is for the case when you still want to shrink the button but don't want an outline e.g. with always show
+            // highlighted close button and not hovered/pressed
 
-            QRectF strokeRect;
-
+            qreal penWidth = PenWidth::Symbol;
             qreal geometryShrinkOffsetHorizontal = PenWidth::Symbol * 1.5;
-            if (!KWindowSystem::isPlatformWayland())
+            if (KWindowSystem::isPlatformX11()) {
+                penWidth *= m_devicePixelRatio;
                 geometryShrinkOffsetHorizontal *= m_devicePixelRatio;
+            }
             qreal geometryShrinkOffsetVertical = geometryShrinkOffsetHorizontal;
 
-            // shrink the backgroundBoundingRect to make border more visible
-            strokeRect = QRectF(backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontal,
-                                                                geometryShrinkOffsetVertical,
-                                                                -geometryShrinkOffsetHorizontal,
-                                                                -geometryShrinkOffsetVertical));
+            if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle) {
+                // shrink the backgroundBoundingRect to make border more visible
+                backgroundBoundingRect = QRectF(backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontal,
+                                                                                geometryShrinkOffsetVertical,
+                                                                                -geometryShrinkOffsetHorizontal,
+                                                                                -geometryShrinkOffsetVertical));
+                background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
 
-            if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
-                background.addRoundedRect(strokeRect, d->scaledCornerRadius(), d->scaledCornerRadius());
-            else
-                background.addRect(strokeRect);
+            } else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle) {
+                qreal halfPenWidth = penWidth / 2;
+                qreal geometryShrinkOffsetHorizontalOuter = geometryShrinkOffsetHorizontal - halfPenWidth;
+                qreal geometryShrinkOffsetHorizontalInner = geometryShrinkOffsetHorizontal + halfPenWidth;
+                qreal geometryShrinkOffsetVerticalOuter = geometryShrinkOffsetHorizontalOuter;
+                qreal geometryShrinkOffsetVerticalInner = geometryShrinkOffsetHorizontalInner;
+                qreal extensionByCornerRadiusInnerOuter = d->scaledCornerRadius() + halfPenWidth;
+                drawOutlineUsingPath = true;
+
+                if (m_rightmostRightVisible && !d->internalSettings()->titlebarRightMargin()) { // right-most-right
+                    outerRect = backgroundBoundingRect.adjusted(halfPenWidth,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                extensionByCornerRadiusInnerOuter,
+                                                                -geometryShrinkOffsetVerticalOuter);
+                    innerRect = backgroundBoundingRect.adjusted(penWidth + halfPenWidth,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                extensionByCornerRadiusInnerOuter,
+                                                                -geometryShrinkOffsetVerticalInner);
+                    backgroundBoundingRect =
+                        backgroundBoundingRect.adjusted(penWidth, -d->scaledCornerRadius(), d->scaledCornerRadius(), -geometryShrinkOffsetVertical);
+                } else if (m_leftmostLeftVisible && !d->internalSettings()->titlebarLeftMargin()) { // left-most-left
+                    outerRect = backgroundBoundingRect.adjusted(-extensionByCornerRadiusInnerOuter,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                -halfPenWidth,
+                                                                -geometryShrinkOffsetVerticalOuter);
+                    innerRect = backgroundBoundingRect.adjusted(-extensionByCornerRadiusInnerOuter,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                -penWidth - halfPenWidth,
+                                                                -geometryShrinkOffsetVerticalInner);
+                    backgroundBoundingRect =
+                        backgroundBoundingRect.adjusted(-d->scaledCornerRadius(), -d->scaledCornerRadius(), -penWidth, -geometryShrinkOffsetVertical);
+                } else {
+                    outerRect = backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontalOuter,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                -geometryShrinkOffsetHorizontalOuter,
+                                                                -geometryShrinkOffsetVerticalOuter);
+                    innerRect = backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontalInner,
+                                                                -extensionByCornerRadiusInnerOuter,
+                                                                -geometryShrinkOffsetHorizontalInner,
+                                                                -geometryShrinkOffsetVerticalInner);
+                    backgroundBoundingRect = backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontal,
+                                                                             -d->scaledCornerRadius(),
+                                                                             -geometryShrinkOffsetHorizontal,
+                                                                             -geometryShrinkOffsetVertical);
+                }
+
+                qreal outerCornerRadius;
+                if (d->scaledCornerRadius() >= 0.05)
+                    outerCornerRadius = d->scaledCornerRadius() + halfPenWidth;
+                else
+                    outerCornerRadius = 0;
+                qreal innerCornerRadius = qMax(0.0, d->scaledCornerRadius() - halfPenWidth);
+                QPainterPath inner;
+                inner.addRoundedRect(innerRect, innerCornerRadius, innerCornerRadius);
+                outline.addRoundedRect(outerRect, outerCornerRadius, outerCornerRadius);
+                outline = outline.subtracted(inner);
+                background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
+            } else { // plain rectangle
+
+                // shrink the backgroundBoundingRect to make border more visible
+                backgroundBoundingRect = backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontal,
+                                                                         geometryShrinkOffsetVertical,
+                                                                         -geometryShrinkOffsetHorizontal,
+                                                                         -geometryShrinkOffsetVertical);
+                background.addRect(backgroundBoundingRect);
+            }
+
         } else {
             painter->setPen(Qt::NoPen);
             if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
                 background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
-            else
+
+            else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle) {
+                if (m_rightmostRightVisible && !d->internalSettings()->titlebarRightMargin()) { // right-most-right
+                    backgroundBoundingRect = backgroundBoundingRect.adjusted(0, -d->scaledCornerRadius(), d->scaledCornerRadius(), 0);
+                } else if (m_leftmostLeftVisible && !d->internalSettings()->titlebarLeftMargin()) { // left-most-left
+                    backgroundBoundingRect = backgroundBoundingRect.adjusted(-d->scaledCornerRadius(), -d->scaledCornerRadius(), 0, 0);
+                } else {
+                    backgroundBoundingRect = backgroundBoundingRect.adjusted(0, -d->scaledCornerRadius(), 0, 0);
+                }
+                background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
+            } else // plain rectangle
                 background.addRect(backgroundBoundingRect);
         }
 
         // clip the rounded corners using the windowPath
-        if (!d->isMaximized() && s->isAlphaChannelSupported())
+        if (!d->isMaximized())
             background = background.intersected(*(d->windowPath()));
 
+        if (drawOutline && !drawOutlineUsingPath) {
+            QPen pen(m_outlineColor);
+            pen.setWidthF(m_standardScaledPenWidth);
+            pen.setCosmetic(true);
+            painter->setPen(pen);
+        }
+        painter->setBrush(m_backgroundColor);
         painter->drawPath(background);
+
+        if (drawOutline && drawOutlineUsingPath) {
+            // clip the rounded corners using the windowPath
+            if (!d->isMaximized())
+                outline = outline.intersected(*(d->windowPath()));
+            painter->setBrush(m_outlineColor);
+            painter->drawPath(outline);
+        }
 
         painter->restore();
     }
@@ -769,15 +894,17 @@ void Button::paintSmallSizedButtonBackground(QPainter *painter) const
         painter->setBrush(m_backgroundColor);
 
         if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallSquare
+            || d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
             || ((d->internalSettings()->cornerRadius() < 0.2)
-                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle))
+                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle))
             || ((d->internalSettings()->cornerRadius() < 0.2)
-                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle))) {
+                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle))) {
             painter->drawRect(
                 QRectF(0 + geometryShrinkOffset, 0 + geometryShrinkOffset, backgroundSize - geometryShrinkOffset, backgroundSize - geometryShrinkOffset));
         } else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallRoundedSquare
-                   || d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle // case where standalone
                    || d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle // case where standalone
+                   || d->internalSettings()->buttonShape()
+                       == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle // case where standalone
         ) {
             painter->drawRoundedRect(
                 QRectF(0 + geometryShrinkOffset, 0 + geometryShrinkOffset, backgroundSize - geometryShrinkOffset, backgroundSize - geometryShrinkOffset),
