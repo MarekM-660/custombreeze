@@ -26,5 +26,4 @@ QStringList StylePlugin::keys() const
 {
     return QStringList(QStringLiteral("Classik"));
 }
-
 }

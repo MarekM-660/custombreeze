@@ -32,5 +32,4 @@ bool SpinBoxData::Data::updateState(bool value)
         return true;
     }
 }
-
 }

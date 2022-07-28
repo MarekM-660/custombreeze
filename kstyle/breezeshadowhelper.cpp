@@ -447,5 +447,4 @@ qreal ShadowHelper::devicePixelRatio(QWidget *widget)
     // On Wayland, the compositor will upscale the shadow tiles if necessary.
     return Helper::isWayland() ? 1 : widget->devicePixelRatioF();
 }
-
 }

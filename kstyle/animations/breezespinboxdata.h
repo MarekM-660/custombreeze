@@ -148,7 +148,6 @@ private:
     //* down arrow data
     Data _downArrowData;
 };
-
 }
 
 #endif

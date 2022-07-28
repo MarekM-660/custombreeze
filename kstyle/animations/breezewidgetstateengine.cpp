@@ -119,5 +119,4 @@ DataMap<WidgetStateData> &WidgetStateEngine::dataMap(AnimationMode mode)
         return _pressedData;
     }
 }
-
 }

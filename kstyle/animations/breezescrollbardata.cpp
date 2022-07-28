@@ -195,5 +195,4 @@ void ScrollBarData::updateAddLineArrow(QStyle::SubControl hoverControl)
         }
     }
 }
-
 }

@@ -24,7 +24,6 @@ struct PropertyNames {
     static const char isTopMenu[];
     static const char bordersSides[];
 };
-
 }
 
 #endif

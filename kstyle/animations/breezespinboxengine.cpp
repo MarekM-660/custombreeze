@@ -25,5 +25,4 @@ bool SpinBoxEngine::registerWidget(QWidget *widget)
     connect(widget, SIGNAL(destroyed(QObject *)), this, SLOT(unregisterWidget(QObject *)), Qt::UniqueConnection);
     return true;
 }
-
 }

@@ -138,5 +138,4 @@ QString WidgetExplorer::widgetInformation(const QWidget *widget) const
 
     return out;
 }
-
 }

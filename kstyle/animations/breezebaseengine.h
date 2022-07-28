@@ -73,7 +73,6 @@ private:
     //* animation duration
     int _duration = 200;
 };
-
 }
 
 #endif

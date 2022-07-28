@@ -243,5 +243,4 @@ void MdiWindowShadowFactory::widgetDestroyed(QObject *object)
     _registeredWidgets.remove(object);
     removeShadow(object);
 }
-
 }

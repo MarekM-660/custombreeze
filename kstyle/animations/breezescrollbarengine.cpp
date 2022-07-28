@@ -74,5 +74,4 @@ qreal ScrollBarEngine::opacity(const QObject *object, QStyle::SubControl control
         return WidgetStateEngine::buttonOpacity(object);
     return AnimationData::OpacityInvalid;
 }
-
 }

@@ -18,16 +18,16 @@
 //__________________________________________
 int main(int argc, char *argv[])
 {
-    KLocalizedString::setApplicationDomain("custom_style_config");
+    KLocalizedString::setApplicationDomain("classik_style_config");
 
     QApplication app(argc, argv);
-    app.setApplicationName(i18n("CustomBreeze Settings"));
-    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("custom-settings")));
+    app.setApplicationName(i18n("ClassiK Settings"));
+    app.setWindowIcon(QIcon::fromTheme(QStringLiteral("classik-settings")));
 
     KCMultiDialog dialog;
-    dialog.setWindowTitle(i18n("CustomBreeze Settings"));
-    dialog.addModule(QStringLiteral("customstyleconfig"));
-    dialog.addModule(QStringLiteral("customdecorationconfig"));
+    dialog.setWindowTitle(i18n("ClassiK Settings"));
+    dialog.addModule(QStringLiteral("classikstyleconfig"));
+    dialog.addModule(QStringLiteral("classikdecorationconfig"));
     dialog.show();
 
     foreach (auto child, dialog.findChildren<QAbstractScrollArea *>()) {

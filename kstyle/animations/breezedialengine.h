@@ -51,7 +51,6 @@ public:
             return QPoint(-1, -1);
     }
 };
-
 }
 
 #endif

@@ -151,7 +151,6 @@ private:
     //* shadow helper used to generate the shadows
     QPointer<ShadowHelper> _shadowHelper;
 };
-
 }
 
 #endif

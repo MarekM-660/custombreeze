@@ -267,7 +267,6 @@ private:
     //* mouse position
     QPoint _position;
 };
-
 }
 
 #endif

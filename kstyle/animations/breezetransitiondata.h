@@ -139,7 +139,6 @@ bool TransitionData::hasParent(const QWidget *widget, const char *className) con
 
     return false;
 }
-
 }
 
 #endif

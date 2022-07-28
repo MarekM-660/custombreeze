@@ -31,7 +31,6 @@ public:
     //* create style
     QStyle *create(const QString &) override;
 };
-
 }
 
 #endif

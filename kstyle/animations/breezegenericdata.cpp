@@ -17,5 +17,4 @@ GenericData::GenericData(QObject *parent, QWidget *target, int duration)
 {
     setupAnimation(_animation, "opacity");
 }
-
 }

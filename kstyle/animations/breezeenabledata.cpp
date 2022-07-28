@@ -31,5 +31,4 @@ bool EnableData::eventFilter(QObject *object, QEvent *event)
 
     return WidgetStateData::eventFilter(object, event);
 }
-
 }

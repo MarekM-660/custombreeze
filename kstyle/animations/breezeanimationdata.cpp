@@ -21,5 +21,4 @@ void AnimationData::setupAnimation(const Animation::Pointer &animation, const QB
     animation.data()->setTargetObject(this);
     animation.data()->setPropertyName(property);
 }
-
 }

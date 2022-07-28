@@ -27,5 +27,4 @@ TransitionData::~TransitionData()
     if (_transition)
         _transition.data()->deleteLater();
 }
-
 }

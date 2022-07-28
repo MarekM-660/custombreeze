@@ -12,7 +12,6 @@
 #include "colortools.h"
 #include "renderdecorationbuttonicon.h"
 
-#include <KColorScheme>
 #include <KColorUtils>
 #include <KIconLoader>
 #include <KWindowSystem>
@@ -598,7 +597,6 @@ void Helper::renderButtonFrame(QPainter *painter,
     bool flat = stateProperties.value("flat");
     bool defaultButton = stateProperties.value("defaultButton");
     bool hasNeutralHighlight = stateProperties.value("hasNeutralHighlight");
-    bool isActiveWindow = stateProperties.value("isActiveWindow");
 
     // don't render background if flat and not hovered, down, checked, or given visual focus
     if (flat && !(hovered || down || checked || visualFocus) && bgAnimation == AnimationData::OpacityInvalid && penAnimation == AnimationData::OpacityInvalid) {
@@ -620,7 +618,7 @@ void Helper::renderButtonFrame(QPainter *painter,
         } else if (checked) {
             bgBrush = hasNeutralHighlight ? alphaColor(neutralText(palette), highlightBackgroundAlpha) : alphaColor(palette.buttonText().color(), 0.125);
             penBrush = hasNeutralHighlight ? neutralText(palette) : KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.3);
-        } else if (isActiveWindow && defaultButton) {
+        } else if (defaultButton) {
             bgBrush = alphaColor(highlightColor, 0.125);
             penBrush = KColorUtils::mix(highlightColor, KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.333), 0.5);
         } else {
@@ -634,7 +632,7 @@ void Helper::renderButtonFrame(QPainter *painter,
             bgBrush = hasNeutralHighlight ? KColorUtils::mix(palette.button().color(), neutralText(palette), 0.333)
                                           : KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.125);
             penBrush = hasNeutralHighlight ? neutralText(palette) : KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.3);
-        } else if (isActiveWindow && defaultButton) {
+        } else if (defaultButton) {
             bgBrush = KColorUtils::mix(palette.button().color(), highlightColor, 0.2);
             penBrush = KColorUtils::mix(highlightColor, KColorUtils::mix(palette.button().color(), palette.buttonText().color(), 0.333), 0.5);
         } else {
@@ -660,7 +658,7 @@ void Helper::renderButtonFrame(QPainter *painter,
     }
 
     // Gradient
-    if (StyleConfigData::buttonGradient() && isActiveWindow && !(flat || down || hovered || checked) && enabled) {
+    if (!(flat || down || hovered || checked) && enabled) {
         QLinearGradient bgGradient(frameRect.topLeft(), frameRect.bottomLeft());
         bgGradient.setColorAt(0, KColorUtils::mix(bgBrush.color(), Qt::white, 0.03125));
         bgGradient.setColorAt(0.5, bgBrush.color());
@@ -673,7 +671,7 @@ void Helper::renderButtonFrame(QPainter *painter,
     }
 
     // Shadow
-    if (isActiveWindow && !(flat || down || checked) && enabled) {
+    if (!(flat || down || checked) && enabled) {
         renderRoundedRectShadow(painter, shadowedRect, shadowColor(palette));
     }
 
@@ -1417,16 +1415,10 @@ void Helper::renderDecorationButton(QPainter *painter,
 
         if (decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
             || decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallSquare
-            || (decorationConfig()->cornerRadius() < 0.2
-                && decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
-            || (decorationConfig()->cornerRadius() < 0.2
-                && decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle))
-            painter->drawRect(QRectF(2, 2, 14, 14));
-        else if (decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallRoundedSquare
-                 || decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
-                 || decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
+            || decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallRoundedSquare
+            || decorationConfig()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
             painter->drawRoundedRect(QRectF(2, 2, 14, 14), 20, 20, Qt::RelativeSize);
-        else { // circle
+        else {
             if (outlineColor.isValid())
                 painter->drawEllipse(QRectF(1, 1, 16, 16)); // have to shrink outlined circle otherwise it gets clipped
             else

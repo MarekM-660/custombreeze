@@ -167,7 +167,6 @@ private:
     //* shared shadow tiles
     QVector<KWindowShadowTile::Ptr> _tiles;
 };
-
 }
 
 #endif

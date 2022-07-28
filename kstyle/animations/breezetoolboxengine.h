@@ -79,7 +79,6 @@ private:
     //* map
     PaintDeviceDataMap<WidgetStateData> _data;
 };
-
 }
 
 #endif

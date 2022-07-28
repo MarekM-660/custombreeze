@@ -44,5 +44,4 @@ void ConfigurationModule::save()
     m_config->save();
     KCModule::save();
 }
-
 }

@@ -51,7 +51,6 @@ protected:
     //! update blur regions for given widget
     void update(QWidget *) const;
 };
-
 }
 
 #endif

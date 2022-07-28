@@ -32,5 +32,4 @@ bool HeaderViewEngine::updateState(const QObject *object, const QPoint &position
     DataMap<HeaderViewData>::Value data(_data.find(object));
     return (data && data.data()->updateState(position, value));
 }
-
 }

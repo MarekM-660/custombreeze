@@ -53,7 +53,6 @@ private:
     //* enable state
     bool _enabled = true;
 };
-
 }
 
 #endif

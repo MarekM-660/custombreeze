@@ -77,7 +77,6 @@ private:
     //* value
     int _value = 0;
 };
-
 }
 
 #endif

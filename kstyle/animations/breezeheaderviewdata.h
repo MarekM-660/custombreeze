@@ -147,7 +147,6 @@ private:
     //* previous tab animations data (for hover leave animations)
     Data _previous;
 };
-
 }
 
 #endif

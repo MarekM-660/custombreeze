@@ -332,5 +332,4 @@ void SplitterProxy::clearSplitter()
     hide();
     parentWidget()->setUpdatesEnabled(true);
 }
-
 }

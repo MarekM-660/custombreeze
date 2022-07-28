@@ -13,9 +13,9 @@
 #include "breezesettings.h"
 #include "config-breeze.h"
 
+#include <KColorScheme>
 #include <KConfigWatcher>
 #include <KSharedConfig>
-#include <KStatefulBrush>
 
 #include <QIcon>
 #include <QPainterPath>
@@ -395,7 +395,6 @@ private:
 
     friend class ToolsAreaManager;
 };
-
 }
 
 #endif

@@ -28,7 +28,6 @@ public:
     //* event filter
     bool eventFilter(QObject *, QEvent *) override;
 };
-
 }
 
 #endif

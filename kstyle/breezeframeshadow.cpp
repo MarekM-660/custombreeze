@@ -315,5 +315,4 @@ QWidget *FrameShadow::viewport() const
     } else
         return nullptr;
 }
-
 }

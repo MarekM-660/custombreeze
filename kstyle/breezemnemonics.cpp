@@ -75,5 +75,4 @@ void Mnemonics::setEnabled(bool value)
         widget->update();
     }
 }
-
 }

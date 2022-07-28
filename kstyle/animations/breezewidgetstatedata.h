@@ -41,7 +41,6 @@ private:
     bool _initialized;
     bool _state;
 };
-
 }
 
 #endif

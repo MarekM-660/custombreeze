@@ -32,7 +32,6 @@ private:
     //* configuration
     StyleConfig *m_config;
 };
-
 }
 
 #endif

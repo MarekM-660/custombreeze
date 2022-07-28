@@ -31,5 +31,4 @@ bool DialEngine::registerWidget(QWidget *widget, AnimationModes mode)
 
     return true;
 }
-
 }

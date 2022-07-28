@@ -107,7 +107,6 @@ private:
     int _w3;
     int _h3;
 };
-
 }
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(Breeze::TileSet::Tiles)
