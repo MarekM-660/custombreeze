@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 
-#define CUSTOM_DECORATION_DEBUG_MODE 1
+#define CUSTOM_DECORATION_DEBUG_MODE 0
 #define CUSTOM_QDEBUG_OUTPUT_PATH_RELATIVE_HOME "/Desktop/custom_debug.txt"
 
 #include "breezesettings.h"

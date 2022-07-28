@@ -4,6 +4,7 @@
 //
 // SPDX-FileCopyrightText: 2009 Hugo Pereira Da Costa <hugo.pereira@free.fr>
 // SPDX-FileCopyrightText: 2021 Paul A McAuley <kde@paulmcauley.com>
+// SPDX-FileCopyrightText: 2022 MarekM-660 <kacper5szymanski@gmail.com>
 //
 // SPDX-License-Identifier: MIT
 //////////////////////////////////////////////////////////////////////////////
