@@ -13,6 +13,8 @@ set(breezecommon_LIB_SRCS
     styleoxygen.cpp
     styleredmond.cpp
     styleredmond10.cpp
+    stylemacos.cpp
+    stylesweet.cpp
     stylesystemicontheme.cpp
     setqdebug_logging.h
 )

@@ -45,6 +45,7 @@ public:
 
     virtual ~RenderDecorationButtonIcon18By18();
 
+    virtual void responsiveButtons(bool, bool, bool);
     virtual void renderCloseIcon();
     virtual void renderMaximizeIcon();
     virtual void renderRestoreIcon();
@@ -79,6 +80,10 @@ protected:
     QPen pen;
     bool notInTitlebar;
     bool boldButtonIcons;
+
+    bool isHovered;
+    bool isInactive;
+    bool isChecked;
 };
 
 }

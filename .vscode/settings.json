@@ -74,6 +74,10 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "qdbuspendingcallwatcher": "cpp"
+        "qdbuspendingcallwatcher": "cpp",
+        "decorationbutton": "cpp",
+        "decorationbuttongroup": "cpp",
+        "qpainter": "cpp",
+        "qvariantanimation": "cpp"
     }
 }

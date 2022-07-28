@@ -8,6 +8,9 @@
 #include "breezebutton.h"
 #include "colortools.h"
 #include "renderdecorationbuttonicon.h"
+#include "stylemacos.h"
+#include "stylesweet.h"
+//#include "responsivebuttons.h"
 
 #include <KColorScheme>
 #include <KColorUtils>
@@ -216,6 +219,8 @@ void Button::drawIcon(QPainter *painter) const
             paintFullHeightButtonBackground(painter);
     }
 
+    bool isInactive(d && !d->client().data()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
+
     // translate from icon offset
     painter->translate(m_iconOffset);
     painter->translate(geometry().topLeft());
@@ -258,6 +263,10 @@ void Button::drawIcon(QPainter *painter) const
             if (d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleSystemIconTheme) {
                 iconRenderer =
                     RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons, iconWidth, m_devicePixelRatio);
+            } else if (d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleMacOS
+                       || d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleSweet) {
+                iconRenderer = RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons);
+                iconRenderer->responsiveButtons(isInactive, isHovered(), isChecked());
             } else
                 iconRenderer = RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons);
 
@@ -409,7 +418,8 @@ QColor Button::foregroundColor() const
 QColor Button::backgroundColor(bool getNonAnimatedColor) const
 {
     auto d = qobject_cast<Decoration *>(decoration());
-    if (!d) {
+    if (!d || d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleMacOS
+        || d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleSweet) {
         return QColor();
     }
 

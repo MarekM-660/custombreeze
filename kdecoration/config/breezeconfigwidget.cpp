@@ -49,6 +49,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     QIcon useSystemIconThemeIcon = QIcon::fromTheme("preferences-desktop-icons");
     m_ui.buttonIconStyle->addItem(useSystemIconThemeIcon, "Use system icon theme");
 
+    updateButtonStyleStackedWidgetVisible();
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
@@ -56,7 +57,9 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     // track ui changes
     connect(m_ui.titleAlignment, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
     connect(m_ui.buttonIconStyle, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
+    connect(m_ui.buttonIconStyle, SIGNAL(currentIndexChanged(int)), SLOT(updateButtonStyleStackedWidgetVisible()));
     connect(m_ui.buttonIconStyle, SIGNAL(currentIndexChanged(int)), SLOT(updateIconsStackedWidgetVisible()));
+    connect(m_ui.customButtonShape, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
     connect(m_ui.buttonShape, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
     connect(m_ui.buttonShape, SIGNAL(currentIndexChanged(int)), SLOT(updateBackgroundShapeStackedWidgetVisible()));
     connect(m_ui.scaleBackgroundPercent, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
@@ -80,17 +83,6 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.inactiveTitlebarOpacity, SIGNAL(valueChanged(int)), SLOT(updateChanged()));
     connect(m_ui.boldButtonIcons, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()));
     connect(m_ui.titlebarBackgroundImg, SIGNAL(valueChanged(qstring)), SLOT(updateChanged()));
-    connect(m_ui.redAlwaysShownClose, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.drawBorderOnMaximizedWindows, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.drawSizeGrip, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.drawBackgroundGradient, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.drawTitleBarSeparator, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.useTitlebarColorForAllBorders, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.opaqueMaximizedTitlebars, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.blurTransparentTitlebars, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.applyOpacityToHeader, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.translucentButtonBackgrounds, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
-    connect(m_ui.colorizeSystemIcons, &QAbstractButton::clicked, this, &ConfigWidget::updateChanged);
     connect(m_ui.titlebarActiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.titlebarInactiveColor, &KColorButton::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.titlebarFont, &KFontRequester::fontSelected, this, &ConfigWidget::updateChanged);
@@ -182,6 +174,7 @@ void ConfigWidget::load()
     // assign to ui
     m_ui.titleAlignment->setCurrentIndex(m_internalSettings->titleAlignment());
     m_ui.buttonIconStyle->setCurrentIndex(m_internalSettings->buttonIconStyle());
+    m_ui.customButtonShape->setCurrentIndex(m_internalSettings->customButtonShape());
     m_ui.buttonShape->setCurrentIndex(m_internalSettings->buttonShape());
     m_ui.scaleBackgroundPercent->setValue(m_internalSettings->scaleBackgroundPercent());
     m_ui.fullHeightButtonWidthMarginLeft->setValue(m_internalSettings->fullHeightButtonWidthMarginLeft());
@@ -256,6 +249,7 @@ void ConfigWidget::load()
     m_ui.thinWindowOutlineThickness->setValue(m_internalSettings->thinWindowOutlineThickness());
     m_ui.colorizeThinWindowOutlineWithButton->setChecked(m_internalSettings->colorizeThinWindowOutlineWithButton());
 
+    updateButtonStyleStackedWidgetVisible();
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
@@ -278,6 +272,7 @@ void ConfigWidget::save()
     m_internalSettings->setTitleAlignment(m_ui.titleAlignment->currentIndex());
     m_internalSettings->setButtonIconStyle(m_ui.buttonIconStyle->currentIndex());
     m_internalSettings->setButtonShape(m_ui.buttonShape->currentIndex());
+    m_internalSettings->setCustomButtonShape(m_ui.customButtonShape->currentIndex());
     m_internalSettings->setScaleBackgroundPercent(m_ui.scaleBackgroundPercent->value());
     m_internalSettings->setFullHeightButtonWidthMarginLeft(m_ui.fullHeightButtonWidthMarginLeft->value());
     m_internalSettings->setFullHeightButtonWidthMarginRight(m_ui.fullHeightButtonWidthMarginRight->value());
@@ -351,7 +346,7 @@ void ConfigWidget::save()
 
     // needed for breeze style to reload shadows
     {
-        QDBusMessage message(QDBusMessage::createSignal("/ClassikDecoration", "org.kde.Classik.Style", "reparseConfiguration"));
+        QDBusMessage message(QDBusMessage::createSignal("/CustomDecoration", "org.kde.Custom.Style", "reparseConfiguration"));
         QDBusConnection::sessionBus().send(message);
     }
 }
@@ -421,6 +416,7 @@ void ConfigWidget::defaults()
     m_ui.thinWindowOutlineThickness->setValue(m_internalSettings->thinWindowOutlineThickness());
     m_ui.colorizeThinWindowOutlineWithButton->setChecked(m_internalSettings->colorizeThinWindowOutlineWithButton());
 
+    updateButtonStyleStackedWidgetVisible();
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
@@ -466,6 +462,8 @@ void ConfigWidget::updateChanged()
     else if (m_ui.buttonIconStyle->currentIndex() != m_internalSettings->buttonIconStyle())
         modified = true;
     else if (m_ui.buttonShape->currentIndex() != m_internalSettings->buttonShape())
+        modified = true;
+    else if (m_ui.customButtonShape->currentIndex() != m_internalSettings->customButtonShape())
         modified = true;
     else if (m_ui.scaleBackgroundPercent->value() != m_internalSettings->scaleBackgroundPercent())
         modified = true;
@@ -598,6 +596,19 @@ void ConfigWidget::setEnabledTransparentTitlebarOptions()
     }
 }
 
+void ConfigWidget::updateButtonStyleStackedWidgetVisible()
+{
+    if (m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleMacOS
+        || m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleSweet) {
+        m_ui.buttonStyleStackedWidget->setCurrentIndex(1);
+        m_ui.buttonStyleStackedWidget2->setCurrentIndex(1);
+        m_ui.alwaysShowStackedWidget->setCurrentIndex(0);
+    } else {
+        m_ui.buttonStyleStackedWidget->setCurrentIndex(0);
+        m_ui.buttonStyleStackedWidget2->setCurrentIndex(0);
+    }
+}
+
 void ConfigWidget::updateIconsStackedWidgetVisible()
 {
     if (m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleSystemIconTheme)
@@ -610,7 +621,9 @@ void ConfigWidget::updateBackgroundShapeStackedWidgetVisible()
 {
     if (m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
         || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
-        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
+        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle
+        || m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleMacOS
+        || m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleSweet)
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(1);
     else
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(0);

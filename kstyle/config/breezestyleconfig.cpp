@@ -38,7 +38,7 @@ StyleConfig::StyleConfig(QWidget *parent)
 #else
     // set shortened version string in UI if an official release
     QRegularExpression re("\\d+\\.\\d+");
-    QRegularExpressionMatch match = re.match(CUSTOMs_VERSION);
+    QRegularExpressionMatch match = re.match(CUSTOM_VERSION);
     if (match.hasMatch()) {
         QString matched = match.captured(0);
         _version->setText("v" + matched);

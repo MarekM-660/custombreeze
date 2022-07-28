@@ -47,6 +47,8 @@
           <choice name="StyleOxygen" />
           <choice name="StyleRedmond" />
           <choice name="StyleRedmond10" />
+          <choice name="StyleMacOS" />
+          <choice name="StyleSweet" />
           <choice name="StyleSystemIconTheme" />
       </choices>
       <default>StyleClassik</default>
@@ -63,6 +65,16 @@
           <choice name="ShapeSmallSquare" />
       </choices>
       <default>ShapeFullHeightRoundedRectangle</default>
+    </entry>
+
+    <!-- button shape -->
+    <entry name="CustomButtonShape" type="Enum">
+      <choices>
+          <choice name="ShapeCircle" />
+          <choice name="ShapeRoundedSquare" />
+          <choice name="ShapeSquare" />
+      </choices>
+      <default>ShapeCircle</default>
     </entry>
     
     <!-- background colors -->

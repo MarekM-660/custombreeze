@@ -7,9 +7,11 @@
 #include "renderdecorationbuttonicon.h"
 #include "styleclassik.h"
 #include "stylekite.h"
+#include "stylemacos.h"
 #include "styleoxygen.h"
 #include "styleredmond.h"
 #include "styleredmond10.h"
+#include "stylesweet.h"
 #include "stylesystemicontheme.h"
 
 namespace Breeze
@@ -34,6 +36,10 @@ std::unique_ptr<RenderDecorationButtonIcon18By18> RenderDecorationButtonIcon18By
         return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleRedmond18By18(painter, notInTitlebar, boldButtonIcons));
     case InternalSettings::StyleRedmond10:
         return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleRedmond1018By18(painter, notInTitlebar, boldButtonIcons));
+    case InternalSettings::StyleMacOS:
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleMacOS18By18(painter, notInTitlebar, boldButtonIcons, internalSettings));
+    case InternalSettings::StyleSweet:
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleSweet18By18(painter, notInTitlebar, boldButtonIcons, internalSettings));
     case InternalSettings::StyleSystemIconTheme:
         return std::unique_ptr<RenderDecorationButtonIcon18By18>(
             new RenderStyleSystemIconTheme(painter, notInTitlebar, boldButtonIcons, iconWidth, internalSettings, devicePixelRatio));
@@ -54,6 +60,13 @@ RenderDecorationButtonIcon18By18::RenderDecorationButtonIcon18By18(QPainter *pai
 RenderDecorationButtonIcon18By18::~RenderDecorationButtonIcon18By18()
 {
     painter->restore();
+}
+
+void RenderDecorationButtonIcon18By18::responsiveButtons(bool inactive, bool hover, bool checked)
+{
+    isInactive = inactive;
+    isHovered = hover;
+    isChecked = checked;
 }
 
 void RenderDecorationButtonIcon18By18::initPainter()

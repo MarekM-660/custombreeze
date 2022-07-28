@@ -52,6 +52,7 @@ protected Q_SLOTS:
     void setEnabledTitlebarColorSettings();
     void setEnabledTitlebarImgSettings();
     void setEnabledTransparentTitlebarOptions();
+    void updateButtonStyleStackedWidgetVisible();
     void updateIconsStackedWidgetVisible();
     void updateBackgroundShapeStackedWidgetVisible();
     void updateCustomColorStackedWidgetVisible();
