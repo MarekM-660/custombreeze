@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(CustomBreeze)
-set(PROJECT_VERSION "3.1.breeze5.25.80")
+set(PROJECT_VERSION "1.0")
 set(PROJECT_VERSION_MAJOR 5)
 
 add_definitions( -DCUSTOM_VERSION="${PROJECT_VERSION}" -DCUSTOM_GIT_MASTER=1)

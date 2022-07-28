@@ -1,20 +1,26 @@
-# ClassiK
+# CustomBreeze
 
 ##### Table of Contents  
 [Overview](#overview)  
 [Installation](#installation)  
->[Pre-built packages](#prebuilt)  
 >[Compile from source](#compile)
 
 [System icon theme](#icons)   
-[Donations](#donations)
 
 &nbsp;
 
 <a name="overview"/>
 
 ## Overview
-_ClassiK_ (formerly _ClassikStyles_) is a highly customizable binary Window Decoration and Application Style plugin for recent versions of the KDE Plasma desktop. [Initially taking inspiration from the iconography of KDE 1](https://forum.kde.org/viewtopic.php?f=285&t=138602?raw=true), the _ClassiK_ defaults are an attempt to create a usable and appealing look for the modern Plasma desktop. Install with the instructions below, and then enable in System Settings -> Appearance -> Window Decorations, and also in System Settings -> Appearance -> Application Style.
+_CustomBreeze_ (_Klassy_ fork) is a highly customizable binary Window Decoration and Application Style plugin for recent versions of the KDE Plasma desktop. Install with the instructions below, and then enable in System Settings -> Appearance -> Window Decorations, and also in System Settings -> Appearance -> Application Style.
+
+Added in _CustomBreeze_:
+* New _MacOS_ and _Sweet_ button icons
+* Introduced the ability to set an image as the background of the title bar
+* Ability to change the font of the title bar
+* Option to force the color of the title bar
+
+&nbsp;
 
 ![Screenshot of Button icons menu](screenshots/button_icon_menu.png?raw=true "Screenshot of Button icons menu")
 * Also provides _Oxygen/Breeze_ and _Redmond_ button icons
@@ -59,23 +65,14 @@ _ClassiK_ (formerly _ClassikStyles_) is a highly customizable binary Window Deco
 * Configurable animations
 
 ### Known issues
-* GTK apps' titlebar buttons will not always update if you change a _ClassiK_ setting. Workaround: you need to select another window decoration and then select _ClassiK_ again to generate the GTK titlebar buttons; alternatively you can change your colour scheme and the GTK titlebar buttons will generate.
+* GTK apps' titlebar buttons will not always update if you change a _CustomBreeze_ setting. Workaround: you need to select another window decoration and then select _CustomBreeze_ again to generate the GTK titlebar buttons; alternatively you can change your colour scheme and the GTK titlebar buttons will generate.
 
 &nbsp;
 
 <a name="installation"/>
 
 ## Installation
-_ClassiK_ from version 3.0 onwards requires a recent version of KDE Plasma with __at least KDE Frameworks 5.86__, so please check you have this in kinfocenter before trying to install. You can either download the pre-built packages or compile from source.
-<a name="prebuilt"/>
-
-### Pre-built packages
-[Respositories are available from the Open Build Service](https://software.opensuse.org//download.html?project=home%3Apaul4us&package=classik) for OpenSUSE, Debian/KDE Neon, Fedora, Mageia and Arch/Manjaro to keep you on the latest version.
-> NB: for OpenSUSE Leap you will [first need to install newer KDE packages](https://en.opensuse.org/SDB:KDE_repositories), otherwise you could corrupt your system!
-
-&nbsp;
-
-Raw binary packages are also available from the Open Build Service link above if you choose "Grab binary packages directly" -- a .rpm or .deb file from one of the selected distributions should also work on other distributions.
+__CustomBreeze__ requires a recent version of KDE Plasma with __at least KDE Frameworks 5.86__, so please check you have this in kinfocenter before trying to install. You can either download the pre-built packages or compile from source.
 
 &nbsp;
 &nbsp;
@@ -86,23 +83,23 @@ Raw binary packages are also available from the Open Build Service link above if
 #### OpenSUSE Tumbleweed/Leap build dependencies
 (Leap requires newer KDE packages from https://en.opensuse.org/SDB:KDE_repositories first):
 ```
-sudo zypper in cmake extra-cmake-modules libQt5Core-devel libQt5Gui-devel libQt5DBus-devel libqt5-qtx11extras-devel libkdecoration2-devel kcoreaddons-devel kguiaddons-devel kconfigwidgets-devel kwindowsystem-devel ki18n-devel kiconthemes-devel kpackage-devel libQt5QuickControls2-devel frameworkintegration-devel kcmutils-devel kirigami2-devel
+sudo zypper in cmake extra-cmake-modules kio libQt5Core-devel libQt5Gui-devel libQt5DBus-devel libqt5-qtx11extras-devel libkdecoration2-devel kcoreaddons-devel kguiaddons-devel kconfigwidgets-devel kwindowsystem-devel ki18n-devel kiconthemes-devel kpackage-devel libQt5QuickControls2-devel frameworkintegration-devel kcmutils-devel kirigami2-devel
 ```
 
 #### Debian/Ubuntu/KDE Neon build dependencies
 ```
-sudo apt install build-essential libkf5config-dev libkdecorations2-dev libqt5x11extras5-dev qtdeclarative5-dev extra-cmake-modules libkf5guiaddons-dev libkf5configwidgets-dev libkf5windowsystem-dev libkf5coreaddons-dev gettext cmake libkf5iconthemes-dev libkf5package-dev libkf5style-dev libkf5kcmutils-dev kirigami2-dev
+sudo apt install build-essential libkf5kiowidgets5 libkf5config-dev libkdecorations2-dev libqt5x11extras5-dev qtdeclarative5-dev extra-cmake-modules libkf5guiaddons-dev libkf5configwidgets-dev libkf5windowsystem-dev libkf5coreaddons-dev gettext cmake libkf5iconthemes-dev libkf5package-dev libkf5style-dev libkf5kcmutils-dev kirigami2-dev
 ```
 
 #### Arch/Manjaro build dependencies
 ```
-sudo pacman -S kdecoration qt5-declarative qt5-x11extras cmake make gcc extra-cmake-modules
+sudo pacman -S kdecoration kio qt5-declarative qt5-x11extras cmake make gcc extra-cmake-modules
 ```
 
 #### Fedora build dependencies
 ```
 sudo dnf install cmake extra-cmake-modules
-sudo dnf install "cmake(Qt5Core)" "cmake(Qt5Gui)" "cmake(Qt5DBus)" "cmake(Qt5X11Extras)" "cmake(KF5GuiAddons)" "cmake(KF5WindowSystem)" "cmake(KF5I18n)" "cmake(KDecoration2)" "cmake(KF5CoreAddons)" "cmake(KF5ConfigWidgets)" "cmake(KF5IconThemes)" "cmake(KF5Package)" "cmake(Qt5Quick)" "cmake(KF5FrameworkIntegration)" "cmake(KF5KCMUtils)" "cmake(KF5Kirigami2)"
+sudo dnf install "cmake(Qt5Core)" "cmake(Qt5Gui)" "cmake(Qt5DBus)" "cmake(Qt5X11Extras)" "cmake(KF5GuiAddons)" "cmake(KF5WindowSystem)" "cmake(KF5I18n)" "cmake(KDecoration2)" "cmake(KF5CoreAddons)" "cmake(KF5ConfigWidgets)" "cmake(KF5IconThemes)" "cmake(KF5Package)" "cmake(Qt5Quick)" "cmake(KF5FrameworkIntegration)" "cmake(KF5KCMUtils)" "cmake(KF5Kirigami2)" "cmake(KF5Kio)"
 ```
 
 ### Step 2: Then, build and install
@@ -129,10 +126,3 @@ To obtain these icon themes go to System Settings->Appearance->Icons->Get New Ic
 > ![Screenshot of downloading matching ClassiK system icons](screenshots/icon_download.png?raw=true "Screenshot of downloading matching ClassiK system icons")
 
 These icons inherit the _Breeze_ icon theme, only overriding the titlebar button icons. To inherit a different icon theme, go to ```~/.local/share/icons/``` and edit the ```Inherits``` line in your ```index.theme``` file.
-
-
-<a name="donations"/>
-
-## Donations
-[![Donate using Liberapay](https://liberapay.com/assets/widgets/donate.svg "Donate using Liberapay")](https://liberapay.com/paulmcauley/donate)
-or [![Donate using Paypal](https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png "Donate using Paypal")](https://www.paypal.com/donate?business=6N9RP4LDLNZCC&currency_code=GBP)
