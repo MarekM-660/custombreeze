@@ -109,7 +109,7 @@ void StyleConfig::save()
 
     // emit dbus signal
     QDBusMessage message(
-        QDBusMessage::createSignal(QStringLiteral("/ClassikStyle"), QStringLiteral("org.kde.Classik.Style"), QStringLiteral("reparseConfiguration")));
+        QDBusMessage::createSignal(QStringLiteral("/KlassyStyle"), QStringLiteral("org.kde.Klassy.Style"), QStringLiteral("reparseConfiguration")));
     QDBusConnection::sessionBus().send(message);
 }
 

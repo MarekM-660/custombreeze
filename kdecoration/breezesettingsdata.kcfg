@@ -3,7 +3,7 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
       http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
-  <kcfgfile name="classikrc"/>
+  <kcfgfile name="klassyrc"/>
 
   <!-- common options -->
   <group name="Common">
@@ -42,7 +42,7 @@
     <!-- button icon style -->
     <entry name="ButtonIconStyle" type="Enum">
       <choices>
-          <choice name="StyleClassik" />
+          <choice name="StyleKlassy" />
           <choice name="StyleKite" />
           <choice name="StyleOxygen" />
           <choice name="StyleRedmond" />
@@ -51,7 +51,7 @@
           <choice name="StyleSweet" />
           <choice name="StyleSystemIconTheme" />
       </choices>
-      <default>StyleClassik</default>
+      <default>StyleKlassy</default>
     </entry>
     
     <!-- button background shape -->
@@ -61,10 +61,10 @@
           <choice name="ShapeFullHeightRoundedRectangle" />
           <choice name="ShapeFullHeightIntegratedRoundedRectangle" />
           <choice name="ShapeSmallCircle" />
-          <choice name="ShapeSmallRoundedSquare" />
           <choice name="ShapeSmallSquare" />
+          <choice name="ShapeSmallRoundedSquare" />
       </choices>
-      <default>ShapeFullHeightRoundedRectangle</default>
+      <default>ShapeFullHeightIntegratedRoundedRectangle</default>
     </entry>
 
     <!-- button shape -->
@@ -90,7 +90,7 @@
     <entry name="AlwaysShow" type="Enum">
         <choices>
             <choice name="AlwaysShowIcons" />
-            <choice name="AlwaysShowIconsAndHighlightedCloseButton" />
+            <choice name="AlwaysShowIconsAndCloseButtonBackground" />
         </choices>
         <default>AlwaysShowIcons</default>
     </entry>
@@ -192,7 +192,7 @@
     <entry name="ThinWindowOutlineStyle" type = "Enum">
         <choices>
             <choice name="WindowOutlineNone" />
-            <choice name="WindowOutlineBlendToShadow" />
+            <choice name="WindowOutlineShadowColor" />
             <choice name="WindowOutlineContrastTitleBarText" />
             <choice name="WindowOutlineAccentColor" />
             <choice name="WindowOutlineAccentWithContrast" />
@@ -207,7 +207,7 @@
     </entry>
     
     <entry name="ThinWindowOutlineThickness" type = "Double">
-       <default>1.8</default>
+       <default>1.75</default>
        <min>1</min>
        <max>10</max>
     </entry>
@@ -238,10 +238,15 @@
     <entry name="IconSize" type="Enum">
       <choices>
           <choice name="IconTiny" />
+          <choice name="IconVerySmall" />
           <choice name="IconSmall" />
+          <choice name="IconSmallMedium" />
           <choice name="IconDefault" />
+          <choice name="IconLargeMedium" />
           <choice name="IconLarge" />
           <choice name="IconVeryLarge" />
+          <choice name="IconGiant" />
+          <choice name="IconHumongous" />
       </choices>
       <default>IconDefault</default>
     </entry>
@@ -249,10 +254,12 @@
     <!-- system icon size -->
     <entry name="SystemIconSize" type="Enum">
       <choices>
-          <choice name="SystemIcon9" />
-          <choice name="SystemIcon13" />
+          <choice name="SystemIcon8" />
+          <choice name="SystemIcon12" />
+          <choice name="SystemIcon14" />
           <choice name="SystemIcon16" />
           <choice name="SystemIcon18" />
+          <choice name="SystemIcon20" />
           <choice name="SystemIcon22" />
           <choice name="SystemIcon24" />
           <choice name="SystemIcon32" />
@@ -270,14 +277,14 @@
     
     <!-- Full-height button width margin left -->
     <entry name="FullHeightButtonWidthMarginLeft" type = "Int">
-       <default>3</default>
+       <default>4</default>
        <min>0</min>
        <max>50</max>
     </entry>
     
     <!-- Full-height button width margin right -->
     <entry name="FullHeightButtonWidthMarginRight" type = "Int">
-       <default>8</default>
+       <default>9</default>
        <min>0</min>
        <max>50</max>
     </entry>
@@ -286,16 +293,23 @@
         <default>false</default>
     </entry>
     
-    <!-- left button spacing -->
+    <!-- Full-height Integrated Rounded Rectangle Bottom Padding -->
+    <entry name="FullHeightIntegratedRoundedRectangleBottomPadding" type = "Double">
+       <default>0.75</default>
+       <min>0</min>
+       <max>10</max>
+    </entry>
+    
+    <!-- left button spacing for non-full-height buttons-->
     <entry name="ButtonSpacingLeft" type = "Int">
-       <default>0</default>
+       <default>3</default>
        <min>0</min>
        <max>50</max>
     </entry>
     
-    <!-- right button spacing -->
+    <!-- right button spacing for non-full-height buttons-->
     <entry name="ButtonSpacingRight" type = "Int">
-       <default>0</default>
+       <default>5</default>
        <min>0</min>
        <max>50</max>
     </entry>
@@ -303,6 +317,24 @@
     <entry name="LockButtonSpacingLeftRight" type = "Bool">
         <default>false</default>
     </entry>
+    
+    <!-- left button spacing for full-height buttons-->
+    <entry name="FullHeightButtonSpacingLeft" type = "Int">
+       <default>0</default>
+       <min>0</min>
+       <max>50</max>
+    </entry>
+    
+    <!-- right button spacing for full-height buttons-->
+    <entry name="FullHeightButtonSpacingRight" type = "Int">
+       <default>0</default>
+       <min>0</min>
+       <max>50</max>
+    </entry>
+    
+    <entry name="LockFullHeightButtonSpacingLeftRight" type = "Bool">
+        <default>false</default>
+    </entry>    
     
     <entry name="TitlebarTopMargin" type = "Double">
        <default>1.7</default>
@@ -322,7 +354,7 @@
     
     <!-- top bottom margins % for maximized windows -->
     <entry name="PercentMaximizedTopBottomMargins" type = "Int">
-       <default>80</default>
+       <default>100</default>
        <min>0</min>
        <max>100</max>
     </entry>
@@ -352,11 +384,11 @@
     <!-- bold button icons -->
     <entry name="BoldButtonIcons" type="Enum">
       <choices>
-          <choice name="BoldIconsAuto" />
           <choice name="BoldIconsBold" />
           <choice name="BoldIconsFine" />
+          <choice name="BoldIconsHiDpiOnly" />
       </choices>
-      <default>BoldIconsAuto</default>
+      <default>BoldIconsBold</default>
     </entry>
     
     <!-- maximized windows -->
@@ -365,7 +397,7 @@
     </entry>
     
     <entry name="UseTitlebarColorForAllBorders" type = "Bool">
-        <default>false</default>
+        <default>true</default>
     </entry>
 
     <!-- background gradient -->

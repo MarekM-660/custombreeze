@@ -17,15 +17,8 @@ namespace Breeze
 class RenderStyleOxygen18By18 : public RenderDecorationButtonIcon18By18
 {
 public:
-    /**
-     * @brief Constructor - calls constructor of base class
-     *
-     * @param painter A QPainter object already initialised with an 18x18 reference window and pen.
-     * @param notInTitlebar Indicates that button is not to be drawn in the title bar, but somewhere else in the UI -- ususally means will be smaller
-     * @param boldButtonIcons When in titlebar this will draw bolder button icons if true
-     */
-    RenderStyleOxygen18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons)
-        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons){};
+    RenderStyleOxygen18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons, const qreal devicePixelRatio, const bool iconScaleFactor)
+        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor){};
 
     void renderCloseIcon() override;
     void renderMaximizeIcon() override;
@@ -34,8 +27,6 @@ public:
     void renderKeepBehindIcon() override;
     void renderKeepInFrontIcon() override;
     void renderContextHelpIcon() override;
-    void renderShadeIcon() override;
-    void renderUnShadeIcon() override;
 };
 
 }

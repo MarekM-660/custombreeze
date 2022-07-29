@@ -24,8 +24,13 @@ public:
      * @param notInTitlebar Indicates that button is not to be drawn in the title bar, but somewhere else in the UI -- ususally means will be smaller
      * @param boldButtonIcons When in titlebar this will draw bolder button icons if true
      */
-    RenderStyleSweet18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons, const QSharedPointer<InternalSettings> internalSettings)
-        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons)
+    RenderStyleSweet18By18(QPainter *painter,
+                           const bool notInTitlebar,
+                           const bool boldButtonIcons,
+                           const qreal devicePixelRatio,
+                           const bool iconScaleFactor,
+                           const QSharedPointer<InternalSettings> internalSettings)
+        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor)
         , m_internalSettings{internalSettings} {};
 
     void renderCloseIcon() override;

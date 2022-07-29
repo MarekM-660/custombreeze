@@ -233,15 +233,15 @@ Style::Style()
     // use DBus connection to update on breeze configuration change
     auto dbus = QDBusConnection::sessionBus();
     dbus.connect(QString(),
-                 QStringLiteral("/ClassikStyle"),
-                 QStringLiteral("org.kde.Classik.Style"),
+                 QStringLiteral("/KlassyStyle"),
+                 QStringLiteral("org.kde.Klassy.Style"),
                  QStringLiteral("reparseConfiguration"),
                  this,
                  SLOT(configurationChanged()));
 
     dbus.connect(QString(),
-                 QStringLiteral("/ClassikDecoration"),
-                 QStringLiteral("org.kde.Classik.Style"),
+                 QStringLiteral("/KlassyDecoration"),
+                 QStringLiteral("org.kde.Klassy.Style"),
                  QStringLiteral("reparseConfiguration"),
                  this,
                  SLOT(configurationChanged()));
@@ -255,6 +255,7 @@ Style::Style()
 
     dbus.connect(QString(), QStringLiteral("/KWin"), QStringLiteral("org.kde.KWin"), QStringLiteral("reloadConfig"), this, SLOT(configurationChanged()));
 
+    connect(qApp, &QApplication::paletteChanged, ColorTools::systemPaletteUpdated);
     connect(qApp, &QApplication::paletteChanged, this, &Style::configurationChanged);
     // call the slot directly; this initial call will set up things that also
     // need to be reset when the system palette changes
@@ -3298,15 +3299,16 @@ QSize Style::menuItemSizeFromContents(const QStyleOption *option, const QSize &c
         } else {
             // build toolbutton option
             const QStyleOptionToolButton toolButtonOption(separatorMenuItemOption(menuItemOption, widget));
+            const QFontMetrics fm(menuTitleFont(toolButtonOption));
 
             // make sure height is large enough for icon and text
             const int iconWidth(menuItemOption->maxIconWidth);
-            const int textHeight(menuItemOption->fontMetrics.height());
+            const int textHeight(fm.height());
             if (!menuItemOption->icon.isNull())
                 size.setHeight(qMax(size.height(), iconWidth));
             if (!menuItemOption->text.isEmpty()) {
                 size.setHeight(qMax(size.height(), textHeight));
-                size.setWidth(qMax(size.width(), menuItemOption->fontMetrics.boundingRect(menuItemOption->text).width()));
+                size.setWidth(qMax(size.width(), fm.boundingRect(menuItemOption->text).width()));
             }
 
             return sizeFromContents(CT_ToolButton, &toolButtonOption, size, widget);
@@ -7579,12 +7581,14 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
         palette = QApplication::palette();
 
     const bool isAlwaysShownCloseButton(
-        buttonType == ButtonClose && _helper->decorationConfig()->alwaysShow() == InternalSettings::EnumAlwaysShow::AlwaysShowIconsAndHighlightedCloseButton);
+        buttonType == ButtonClose && _helper->decorationConfig()->alwaysShow() == InternalSettings::EnumAlwaysShow::AlwaysShowIconsAndCloseButtonBackground);
     const bool withTrafficLights(_helper->decorationConfig()->backgroundColors() == InternalSettings::EnumBackgroundColors::ColorsAccentWithTrafficLights);
 
     palette.setCurrentColorGroup(QPalette::Active);
 
-    std::shared_ptr<SystemButtonColors> decorationButtonAccentColors = ColorTools::getSystemButtonColors(palette);
+    if (!g_decorationColors) {
+        ColorTools::generateDecorationColors(QApplication::palette(), true);
+    }
 
     const QColor base(palette.color(QPalette::WindowText));
     const QColor selected(_helper->titleBarTextColor(true));
@@ -7620,24 +7624,22 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
             // for translucent, background colours also need to be defined
             offInvertedNormalStateBackground = ColorTools::alphaMix(base, 0.15);
             disabledInvertedNormalStateBackground = ColorTools::alphaMix(base, 0.07);
-            offSelectedInvertedNormalStateBackground = _helper->decorationConfig()->redAlwaysShownClose()
-                ? decorationButtonAccentColors->negativeReducedOpacityBackground
-                : ColorTools::alphaMix(selected, 0.15);
-            offHoverBackground = buttonType == ButtonClose ? decorationButtonAccentColors->negativeReducedOpacityBackground : ColorTools::alphaMix(base, 0.15);
-            onFocusBackground = buttonType == ButtonClose ? decorationButtonAccentColors->negativeReducedOpacityOutline : ColorTools::alphaMix(base, 0.25);
+            offSelectedInvertedNormalStateBackground = _helper->decorationConfig()->redAlwaysShownClose() ? g_decorationColors->negativeReducedOpacityBackground
+                                                                                                          : ColorTools::alphaMix(selected, 0.15);
+            offHoverBackground = buttonType == ButtonClose ? g_decorationColors->negativeReducedOpacityBackground : ColorTools::alphaMix(base, 0.15);
+            onFocusBackground = buttonType == ButtonClose ? g_decorationColors->negativeReducedOpacityOutline : ColorTools::alphaMix(base, 0.25);
         } else {
             // for non-translucent using the titlebar text colour, it is a special case in the later logic where the foreground colour is inverted to create the
             // background
             onFocusForeground =
-                buttonType == ButtonClose ? decorationButtonAccentColors->negativeSaturated : KColorUtils::mix(palette.color(QPalette::Window), base, 0.7);
-            onFocusSelectedForeground = buttonType == ButtonClose ? decorationButtonAccentColors->negativeSaturated : selected;
+                buttonType == ButtonClose ? g_decorationColors->negativeSaturated : KColorUtils::mix(palette.color(QPalette::Window), base, 0.7);
+            onFocusSelectedForeground = buttonType == ButtonClose ? g_decorationColors->negativeSaturated : selected;
             if (isAlwaysShownCloseButton) {
-                offSelectedForeground = _helper->decorationConfig()->redAlwaysShownClose() ? decorationButtonAccentColors->negative : selected;
+                offSelectedForeground = _helper->decorationConfig()->redAlwaysShownClose() ? g_decorationColors->negative : selected;
             } else
                 offSelectedForeground = selected;
 
-            offHoverForeground =
-                buttonType == ButtonClose ? decorationButtonAccentColors->negative : KColorUtils::mix(palette.color(QPalette::Window), base, 0.5);
+            offHoverForeground = buttonType == ButtonClose ? g_decorationColors->negative : KColorUtils::mix(palette.color(QPalette::Window), base, 0.5);
             offForeground = KColorUtils::mix(palette.color(QPalette::Window), base, 0.5);
             disabledForeground = KColorUtils::mix(palette.color(QPalette::Window), base, 0.2);
             onFocusBackground = onFocusForeground; // used only for setting outline colour
@@ -7656,8 +7658,8 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
             offInvertedNormalStateBackground = ColorTools::alphaMix(base, 0.15);
             disabledInvertedNormalStateBackground = ColorTools::alphaMix(base, 0.07);
             offSelectedInvertedNormalStateBackground = (_helper->decorationConfig()->redAlwaysShownClose())
-                ? decorationButtonAccentColors->negativeReducedOpacityBackground
-                : decorationButtonAccentColors->buttonReducedOpacityBackground;
+                ? g_decorationColors->negativeReducedOpacityBackground
+                : g_decorationColors->buttonReducedOpacityBackground;
         } else {
             onFocusForeground = buttonType == ButtonClose ? Qt::GlobalColor::white : KColorUtils::mix(palette.color(QPalette::Window), base, 0.8);
             onFocusSelectedForeground = buttonType == ButtonClose ? Qt::GlobalColor::white : selected;
@@ -7669,50 +7671,50 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
             offInvertedNormalStateBackground = KColorUtils::mix(palette.color(QPalette::Window), base, 0.2);
             disabledInvertedNormalStateBackground = KColorUtils::mix(palette.color(QPalette::Window), base, 0.07);
             offSelectedInvertedNormalStateBackground =
-                (_helper->decorationConfig()->redAlwaysShownClose()) ? decorationButtonAccentColors->negative : decorationButtonAccentColors->buttonHover;
+                (_helper->decorationConfig()->redAlwaysShownClose()) ? g_decorationColors->negative : g_decorationColors->buttonHover;
         }
 
         // hover and focus background colours
         switch (buttonType) {
         case ButtonClose:
             if (_helper->decorationConfig()->translucentButtonBackgrounds()) {
-                offHoverBackground = decorationButtonAccentColors->negativeReducedOpacityBackground;
-                onFocusBackground = decorationButtonAccentColors->negativeReducedOpacityOutline;
+                offHoverBackground = g_decorationColors->negativeReducedOpacityBackground;
+                onFocusBackground = g_decorationColors->negativeReducedOpacityOutline;
             } else {
-                offHoverBackground = decorationButtonAccentColors->negative;
-                onFocusBackground = decorationButtonAccentColors->negativeSaturated;
+                offHoverBackground = g_decorationColors->negative;
+                onFocusBackground = g_decorationColors->negativeSaturated;
             }
             break;
         case ButtonMaximize:
         case ButtonRestore:
             if (withTrafficLights) {
                 if (_helper->decorationConfig()->translucentButtonBackgrounds()) {
-                    offHoverBackground = decorationButtonAccentColors->positiveReducedOpacityBackground;
-                    onFocusBackground = decorationButtonAccentColors->positiveReducedOpacityOutline;
+                    offHoverBackground = g_decorationColors->positiveReducedOpacityBackground;
+                    onFocusBackground = g_decorationColors->positiveReducedOpacityOutline;
                 } else {
-                    offHoverBackground = decorationButtonAccentColors->positiveLessSaturated;
-                    onFocusBackground = decorationButtonAccentColors->positive;
+                    offHoverBackground = g_decorationColors->positiveLessSaturated;
+                    onFocusBackground = g_decorationColors->positive;
                 }
                 break;
             }
         case ButtonMinimize:
             if (withTrafficLights) {
                 if (_helper->decorationConfig()->translucentButtonBackgrounds()) {
-                    offHoverBackground = decorationButtonAccentColors->neutralReducedOpacityBackground;
-                    onFocusBackground = decorationButtonAccentColors->neutralReducedOpacityOutline;
+                    offHoverBackground = g_decorationColors->neutralReducedOpacityBackground;
+                    onFocusBackground = g_decorationColors->neutralReducedOpacityOutline;
                 } else {
-                    offHoverBackground = decorationButtonAccentColors->neutralLessSaturated;
-                    onFocusBackground = decorationButtonAccentColors->neutral;
+                    offHoverBackground = g_decorationColors->neutralLessSaturated;
+                    onFocusBackground = g_decorationColors->neutral;
                 }
                 break;
             }
         default:
             if (_helper->decorationConfig()->translucentButtonBackgrounds()) {
-                offHoverBackground = decorationButtonAccentColors->buttonReducedOpacityBackground;
-                onFocusBackground = decorationButtonAccentColors->buttonReducedOpacityOutline;
+                offHoverBackground = g_decorationColors->buttonReducedOpacityBackground;
+                onFocusBackground = g_decorationColors->buttonReducedOpacityOutline;
             } else {
-                offHoverBackground = decorationButtonAccentColors->buttonHover;
-                onFocusBackground = decorationButtonAccentColors->buttonFocus;
+                offHoverBackground = g_decorationColors->buttonHover;
+                onFocusBackground = g_decorationColors->buttonFocus;
             }
         }
     }
@@ -7780,6 +7782,12 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
     // output icon
     QIcon icon;
 
+    qreal devicePixelRatio;
+    if (widget)
+        devicePixelRatio = widget->devicePixelRatio();
+    else
+        devicePixelRatio = 1;
+
     foreach (const IconData &iconData, iconTypes) {
         foreach (const int &iconSize, iconSizes) {
             // create pixmap
@@ -7796,7 +7804,7 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
                                             iconData._paintBackground,
                                             iconData._backgroundColor,
                                             iconData._outlineColor,
-                                            widget->devicePixelRatioF());
+                                            devicePixelRatio);
 
             painter.end();
 

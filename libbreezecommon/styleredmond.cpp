@@ -8,38 +8,68 @@
 
 namespace Breeze
 {
+
 void RenderStyleRedmond18By18::renderCloseIcon()
 {
+    // first determine whether the close button should be enlarged to match an enlarged maximized button
+    bool isSmallerMaximize = true;
+    int roundedBoldPenWidth = 1;
+    if (!notInTitlebar) {
+        if (boldButtonIcons)
+            isSmallerMaximize = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, m_maximizeBoldPenWidthFactor);
+        else
+            isSmallerMaximize = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+    }
+
+    pen.setWidthF(pen.widthF() * 1.166666666); // thicken up diagonal slightly to give a balanced look
+    painter->setPen(pen);
+
     if (notInTitlebar) {
         RenderDecorationButtonIcon18By18::renderCloseIcon();
 
     } else {
         if (boldButtonIcons) {
-            // thicker pen in titlebar
-            pen.setWidthF(pen.widthF() * 1.75);
+            pen.setWidthF(pen.widthF() * 1.5); // total factor of 1.75
             painter->setPen(pen);
         }
 
-        // slightly larger X to tie-in with design of square maximize button
-        painter->drawLine(QPointF(4.5, 4.5), QPointF(13.5, 13.5));
-        painter->drawLine(QPointF(13.5, 4.5), QPointF(4.5, 13.5));
+        if (isSmallerMaximize) {
+            // slightly larger X than Breeze to tie-in with design of square maximize button
+            painter->drawLine(QPointF(4.5, 4.5), QPointF(13.5, 13.5));
+            painter->drawLine(QPointF(13.5, 4.5), QPointF(4.5, 13.5));
+        } else {
+            qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+
+            // very slightly larger X again to match larger maximize button
+            painter->drawLine(QPointF(4.5 - adjustmentOffset, 4.5 - adjustmentOffset), QPointF(13.5 + adjustmentOffset, 13.5 + adjustmentOffset));
+            painter->drawLine(QPointF(13.5 + adjustmentOffset, 4.5 - adjustmentOffset), QPointF(4.5 - adjustmentOffset, 13.5 + adjustmentOffset));
+        }
     }
 }
 
 void RenderStyleRedmond18By18::renderMaximizeIcon()
 {
+    bool isOddPenWidth = true;
     if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
         if (boldButtonIcons) {
-            // thicker pen in titlebar
-            pen.setWidthF(pen.widthF() * 1.666666);
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, m_maximizeBoldPenWidthFactor);
+        } else {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
         }
+        pen.setWidthF(roundedBoldPenWidth);
+
+        painter->setPen(pen);
     }
 
-    pen.setJoinStyle(Qt::BevelJoin);
-    painter->setPen(pen);
     // large square
-    painter->drawRoundedRect(QRectF(QPointF(4.5, 4.5), QPointF(13.5, 13.5)), 0.025, 0.025, Qt::RelativeSize);
-    // painter->drawRect( QRectF( QPointF( 4.5, 4.5 ), QPointF( 13.5, 13.5 ) ) );
+    QRectF rect(QPointF(4.5, 4.5), QPointF(13.5, 13.5));
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        rect.adjust(-adjustmentOffset, -adjustmentOffset, adjustmentOffset, adjustmentOffset);
+    }
+
+    painter->drawRoundedRect(rect, 0.025, 0.025, Qt::RelativeSize);
 }
 
 void RenderStyleRedmond18By18::renderRestoreIcon()
@@ -57,30 +87,85 @@ void RenderStyleRedmond18By18::renderRestoreIcon()
 
     } else {
         if (boldButtonIcons) {
+            int roundedBoldPenWidth = 1;
+            roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, m_restoreBoldPenWidthFactor);
             // thicker pen in titlebar
-            pen.setWidthF(pen.widthF() * 1.3);
+            pen.setWidthF(roundedBoldPenWidth);
             painter->setPen(pen);
+
+            renderRestoreIconAfterPenWidthSet();
+
+        } else {
+            int roundedBoldPenWidth = 1;
+            roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+
+            // thicker pen in titlebar
+            pen.setWidthF(roundedBoldPenWidth);
+            painter->setPen(pen);
+
+            renderRestoreIconAfterPenWidthSet();
         }
-
-        // overlapping windows icon
-        // foregreound square
-        painter->drawRect(QRectF(QPointF(4.5, 6.5), QPointF(11.5, 13.5)));
-
-        // background square
-        painter->drawPolyline(QVector<QPointF>{QPointF(6.5, 6), QPointF(6.5, 4.5), QPointF(13.5, 4.5), QPointF(13.5, 11.5), QPointF(12, 11.5)});
     }
+}
+
+// actually renders the overlapping windows icon
+void RenderStyleRedmond18By18::renderRestoreIconAfterPenWidthSet()
+{
+    // this is to calculate the offset to move the two rectangles further from each other onto an aligned pixel
+    // they are moved apart as the line thickness increases -- this prevents blurriness when the lines are drawn too close together
+    int roundedPenWidth = qRound(pen.widthF());
+
+    qreal shiftOffset;
+    if (roundedPenWidth > 1)
+        shiftOffset = convertDevicePixelsTo18By18(0.5);
+    else
+        shiftOffset = 0;
+
+    // overlapping windows icon
+    // foreground square
+    QRectF foregroundSquare(QPointF(4.5, 6.5), QPointF(11.5, 13.5));
+    foregroundSquare.adjust(-shiftOffset, shiftOffset, -shiftOffset, shiftOffset);
+
+    painter->drawRect(foregroundSquare);
+
+    QVector<QPointF> background{QPointF(6.5, 6), QPointF(6.5, 4.5), QPointF(13.5, 4.5), QPointF(13.5, 11.5), QPointF(12, 11.5)};
+    background[0].setX(background[0].x() + shiftOffset);
+    background[0].setY(background[0].y() + shiftOffset);
+    background[1].setX(background[1].x() + shiftOffset);
+    background[1].setY(background[1].y() - shiftOffset);
+    background[2].setX(background[2].x() + shiftOffset);
+    background[2].setY(background[2].y() - shiftOffset);
+    background[3].setX(background[3].x() + shiftOffset);
+    background[3].setY(background[3].y() - shiftOffset);
+    background[4].setX(background[4].x() - shiftOffset);
+    background[4].setY(background[4].y() - shiftOffset);
+
+    // background square
+    painter->drawPolyline(background);
 }
 
 void RenderStyleRedmond18By18::renderMinimizeIcon()
 {
-    if ((!notInTitlebar) && boldButtonIcons) {
-        // thicker pen in titlebar
-        pen.setWidthF(pen.widthF() * 1.75);
+    bool isOddPenWidth = true;
+
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth;
+        if (boldButtonIcons) {
+            // thicker pen in titlebar
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, m_maximizeBoldPenWidthFactor);
+        } else
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        pen.setWidthF(roundedBoldPenWidth);
         painter->setPen(pen);
     }
 
     // horizontal line
-    painter->drawLine(QPointF(4.5, 13.5), QPointF(13.5, 13.5));
+    if (isOddPenWidth)
+        painter->drawLine(QPointF(4.5, 12.5), QPointF(13.5, 12.5));
+    else {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->drawLine(QPointF(4.5, 12.5 + adjustmentOffset), QPointF(13.5, 12.5 + adjustmentOffset));
+    }
 }
 
 /*//Experimental 3 squares
@@ -161,29 +246,55 @@ void RenderStyleRedmond18By18::renderMinimizeIcon()
 // For consistency with breeze icon set
 void RenderStyleRedmond18By18::renderKeepBehindIcon()
 {
-    if ((!notInTitlebar) && boldButtonIcons) {
+    bool isOddPenWidth = true;
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
+        if (boldButtonIcons) {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1.1);
+        } else {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        }
+
         // thicker pen in titlebar
-        pen.setWidthF(pen.widthF() * 1.1);
+        pen.setWidthF(roundedBoldPenWidth);
         painter->setPen(pen);
     }
 
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->translate(QPointF(-adjustmentOffset, -adjustmentOffset));
+    }
+
     // horizontal lines
-    painter->drawLine(QPointF(4.5, 13.5), QPointF(13.5, 13.5));
-    painter->drawLine(QPointF(9.5, 9.5), QPointF(13.5, 9.5));
-    painter->drawLine(QPointF(9.5, 5.5), QPointF(13.5, 5.5));
+    painter->drawLine(QPointF(4.5, 14.5), QPointF(13.5, 14.5));
+    painter->drawLine(QPointF(9.5, 10.5), QPointF(13.5, 10.5));
+    painter->drawLine(QPointF(9.5, 6.5), QPointF(13.5, 6.5));
 
     // arrow
-    painter->drawLine(QPointF(4.5, 3.5), QPointF(4.5, 11.5));
+    painter->drawLine(QPointF(4.5, 4.5), QPointF(4.5, 12.5));
 
-    painter->drawPolyline(QVector<QPointF>{QPointF(2.5, 9.5), QPointF(4.5, 11.5), QPointF(6.5, 9.5)});
+    painter->drawPolyline(QVector<QPointF>{QPointF(2.5, 10.5), QPointF(4.5, 12.5), QPointF(6.5, 10.5)});
 }
 
 void RenderStyleRedmond18By18::renderKeepInFrontIcon()
 {
-    if ((!notInTitlebar) && boldButtonIcons) {
+    bool isOddPenWidth = true;
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
+        if (boldButtonIcons) {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1.1);
+        } else {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        }
+
         // thicker pen in titlebar
-        pen.setWidthF(pen.widthF() * 1.1);
+        pen.setWidthF(roundedBoldPenWidth);
         painter->setPen(pen);
+    }
+
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->translate(QPointF(-adjustmentOffset, -adjustmentOffset));
     }
 
     // horizontal lines
@@ -221,25 +332,5 @@ void RenderStyleRedmond18By18::renderContextHelpIcon()
         painter->drawEllipse(QRectF(8, 14, 2, 2));
     else
         painter->drawEllipse(QRectF(8.25, 14.25, 1.5, 1.5));
-}
-
-void RenderStyleRedmond18By18::renderShadeIcon()
-{
-    if ((!notInTitlebar) && boldButtonIcons) {
-        // thicker pen in titlebar
-        pen.setWidthF(pen.widthF() * 1.3);
-        painter->setPen(pen);
-    }
-    RenderDecorationButtonIcon18By18::renderShadeIcon();
-}
-
-void RenderStyleRedmond18By18::renderUnShadeIcon()
-{
-    if ((!notInTitlebar) && boldButtonIcons) {
-        // thicker pen in titlebar
-        pen.setWidthF(pen.widthF() * 1.3);
-        painter->setPen(pen);
-    }
-    RenderDecorationButtonIcon18By18::renderUnShadeIcon();
 }
 }

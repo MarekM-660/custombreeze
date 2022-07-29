@@ -36,8 +36,6 @@ Added in _CustomBreeze_:
 > ![Orange button style, dark](screenshots/highlight_gifs/odark.gif?raw=true "Orange button style, dark")![Orange button style, light](screenshots/highlight_gifs/olight.gif?raw=true "Orange button style, light")
 > ![Turquoise button style, dark](screenshots/highlight_gifs/tdark.gif?raw=true "Turquoise button style, dark")![Turquoise button style, light](screenshots/highlight_gifs/tlight.gif?raw=true "Turquoise button style, light")
 
-* Configurable whether to draw bold button icons for HiDPI displays; by default automatically turns off bold icons on LoDPI 96DPI screens to prevent blurring
-
 
 * Full-height Rectangular or Circular button highlights:
 > ![Full-height Rectangle button highlight style, inheriting system highlight colours](screenshots/highlight_gifs/squareHighlight.gif?raw=true "Full-height Rectangle button highlight style, inheriting system highlight colours")![Circle button highlight style, inheriting system highlight colours](screenshots/highlight_gifs/circleHighlight.gif?raw=true "Circle button highlight style, inheriting system highlight colours")
@@ -60,7 +58,7 @@ Added in _CustomBreeze_:
 > ![Composite screenshot of thin window outlines with Contrast blended with accent colour (light)](screenshots/thin_window_outline_light_contrast_accent.png?raw=true "Composite screenshot of thin window outlines with Contrast blended with accent colour (light)")
 
 * Configurable scrollbars:
-> <img src="https://raw.githubusercontent.com/paulmcauley/classik/master/screenshots/configurable_scrollbars.png" width="80%">![Default scrollbar animation](screenshots/scrollbar_mouseover.gif?raw=true "Default scrollbar animation")
+> <img src="https://raw.githubusercontent.com/paulmcauley/klassy/master/screenshots/configurable_scrollbars.png" width="80%">![Default scrollbar animation](screenshots/scrollbar_mouseover.gif?raw=true "Default scrollbar animation")
 
 * Configurable animations
 
@@ -72,8 +70,7 @@ Added in _CustomBreeze_:
 <a name="installation"/>
 
 ## Installation
-__CustomBreeze__ requires a recent version of KDE Plasma with __at least KDE Frameworks 5.86__, so please check you have this in kinfocenter before trying to install. You can either download the pre-built packages or compile from source.
-
+_CustomBreeze_ requires at least __Plasma 5.25__, so please check you have this in kinfocenter before trying to install.
 &nbsp;
 &nbsp;
 <a name="compile"/>
@@ -105,13 +102,11 @@ sudo dnf install "cmake(Qt5Core)" "cmake(Qt5Gui)" "cmake(Qt5DBus)" "cmake(Qt5X11
 ### Step 2: Then, build and install
 Build and install from source script:
 ```
-chmod +x install.sh
 ./install.sh
 ```
 
 Uninstall build script:
 ```
-chmod +x uninstall.sh
 ./uninstall.sh
 ```
 
@@ -122,7 +117,7 @@ chmod +x uninstall.sh
 To make your Plasma Desktop fully consistent, there are also matching system icon themes. These add consistent titlebar button icons to certain minor context menus in Plasma, for example, _Classik-with-Square-highlight_:
 > <img src="https://raw.githubusercontent.com/paulmcauley/classikstyles/paulmcauley/selectable_buttoniconstyles/screenshots/classik_square_icons.png" alt="Screenshot of Classik with Square highlight icon theme" width="512">
 
-To obtain these icon themes go to System Settings->Appearance->Icons->Get New Icons... and search for "classikstyles". Then download your theme of choice to match your Button icon style and Button highlight style:
-> ![Screenshot of downloading matching ClassiK system icons](screenshots/icon_download.png?raw=true "Screenshot of downloading matching ClassiK system icons")
+To obtain these icon themes go to System Settings->Appearance->Icons->Get New Icons... and search for "klassy". Then download your theme of choice to match your Button icon style and Button highlight style:
+> ![Screenshot of downloading matching Klassy system icons](screenshots/icon_download.png?raw=true "Screenshot of downloading matching Klassy system icons")
 
 These icons inherit the _Breeze_ icon theme, only overriding the titlebar button icons. To inherit a different icon theme, go to ```~/.local/share/icons/``` and edit the ```Inherits``` line in your ```index.theme``` file.

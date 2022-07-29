@@ -128,21 +128,17 @@ public:
     {
         return m_smallButtonPaddedHeight;
     }
-    qreal iconHeight()
+    int iconHeight()
     {
         return m_iconHeight;
     }
-    qreal smallButtonBackgroundHeight()
+    int smallButtonBackgroundHeight()
     {
         return m_smallButtonBackgroundHeight;
     }
     qreal scaledCornerRadius()
     {
         return m_scaledCornerRadius;
-    }
-    std::shared_ptr<SystemButtonColors> systemAccentColors()
-    {
-        return m_systemAccentColors;
     }
 
     KDecoration2::DecorationButtonGroup *leftButtons()
@@ -168,6 +164,7 @@ private Q_SLOTS:
     void updateTitleBar();
     void updateAnimationState();
     void updateSizeGripVisibility();
+
     void forceUpdateShadow()
     {
         updateShadow(true);
@@ -181,10 +178,9 @@ private:
     void createButtons();
     void calculateWindowAndTitleBarShapes(const bool windowShapeOnly = false);
     void paintTitleBar(QPainter *painter, const QRect &repaintRegion);
-    void updateShadow(const bool force = false, const bool noCache = false);
-    QSharedPointer<KDecoration2::DecorationShadow> createShadowObject(const float strengthScale);
+    void updateShadow(const bool force = false, const bool noCache = false, const bool isThinWindowOutlineOverride = false);
+    QSharedPointer<KDecoration2::DecorationShadow> createShadowObject(const float strengthScale, const bool isThinWindowOutlineOverride = false);
     void setScaledCornerRadius();
-    void setSystemAccentColors();
 
     //*@name border size
     //@{
@@ -207,7 +203,7 @@ private:
     void setScaledTitleBarTopBottomMargins();
     void setScaledTitleBarSideMargins();
     void setAddedTitleBarOpacity();
-    qreal titleBarSeparatorHeight() const;
+    int titleBarSeparatorHeight() const;
     qreal devicePixelRatio(QPainter *painter) const;
 
     //* button heights
@@ -265,12 +261,10 @@ private:
 
     qreal m_systemScaleFactor = 1.0;
 
-    std::shared_ptr<SystemButtonColors> m_systemAccentColors;
-
     ButtonBackgroundType m_buttonBackgroundType = ButtonBackgroundType::Small;
-    int m_smallButtonPaddedHeight;
-    qreal m_iconHeight;
-    qreal m_smallButtonBackgroundHeight;
+    int m_smallButtonPaddedHeight = 20;
+    int m_iconHeight = 18;
+    int m_smallButtonBackgroundHeight = 18;
 
     bool m_colorSchemeHasHeaderColor = true;
     bool m_toolsAreaWillBeDrawn = true;
@@ -367,6 +361,6 @@ bool Decoration::hideTitleBar() const
     return m_internalSettings->hideTitleBar() && !c->isShaded();
 }
 
-}
+} // end Breeze namespace
 
 #endif

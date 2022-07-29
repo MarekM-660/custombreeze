@@ -6,8 +6,8 @@
  */
 
 #include "renderdecorationbuttonicon.h"
-#include "styleclassik.h"
 #include "stylekite.h"
+#include "styleklassy.h"
 #include "stylemacos.h"
 #include "styleoxygen.h"
 #include "styleredmond.h"
@@ -23,37 +23,50 @@ std::unique_ptr<RenderDecorationButtonIcon18By18> RenderDecorationButtonIcon18By
                                                                                             const bool notInTitlebar,
                                                                                             const bool boldButtonIcons,
                                                                                             qreal iconWidth,
-                                                                                            qreal devicePixelRatio)
+                                                                                            qreal devicePixelRatio,
+                                                                                            qreal iconScaleFactor)
 {
     switch (internalSettings->buttonIconStyle()) {
-    case InternalSettings::StyleClassik:
+    case InternalSettings::StyleKlassy:
     default:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleClassik18By18(painter, notInTitlebar, boldButtonIcons));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleKlassy18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor));
     case InternalSettings::StyleKite:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleKite18By18(painter, notInTitlebar, boldButtonIcons));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleKite18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor));
     case InternalSettings::StyleOxygen:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleOxygen18By18(painter, notInTitlebar, boldButtonIcons));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleOxygen18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor));
     case InternalSettings::StyleRedmond:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleRedmond18By18(painter, notInTitlebar, boldButtonIcons));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleRedmond18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor));
     case InternalSettings::StyleRedmond10:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleRedmond1018By18(painter, notInTitlebar, boldButtonIcons));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleRedmond1018By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor));
     case InternalSettings::StyleMacOS:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleMacOS18By18(painter, notInTitlebar, boldButtonIcons, internalSettings));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleMacOS18By18(painter, notInTitlebar, devicePixelRatio, iconScaleFactor, boldButtonIcons, internalSettings));
     case InternalSettings::StyleSweet:
-        return std::unique_ptr<RenderDecorationButtonIcon18By18>(new RenderStyleSweet18By18(painter, notInTitlebar, boldButtonIcons, internalSettings));
+        return std::unique_ptr<RenderDecorationButtonIcon18By18>(
+            new RenderStyleSweet18By18(painter, notInTitlebar, devicePixelRatio, iconScaleFactor, boldButtonIcons, internalSettings));
     case InternalSettings::StyleSystemIconTheme:
         return std::unique_ptr<RenderDecorationButtonIcon18By18>(
-            new RenderStyleSystemIconTheme(painter, notInTitlebar, boldButtonIcons, iconWidth, internalSettings, devicePixelRatio));
+            new RenderStyleSystemIconTheme(painter, notInTitlebar, boldButtonIcons, iconWidth, internalSettings, devicePixelRatio, iconScaleFactor));
     }
 }
 
-RenderDecorationButtonIcon18By18::RenderDecorationButtonIcon18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons)
+RenderDecorationButtonIcon18By18::RenderDecorationButtonIcon18By18(QPainter *painter,
+                                                                   const bool notInTitlebar,
+                                                                   const bool boldButtonIcons,
+                                                                   const qreal devicePixelRatio,
+                                                                   const qreal iconScaleFactor)
+    : painter(painter)
+    , pen(painter->pen())
+    , notInTitlebar(notInTitlebar)
+    , boldButtonIcons(boldButtonIcons)
+    , m_devicePixelRatio(devicePixelRatio)
+    , m_iconScaleFactor(iconScaleFactor)
 {
-    this->painter = painter;
-    this->pen = painter->pen();
-    this->notInTitlebar = notInTitlebar;
-    this->boldButtonIcons = boldButtonIcons;
-
     painter->save();
     initPainter();
 }
@@ -142,12 +155,48 @@ void RenderDecorationButtonIcon18By18::renderPinOnAllDesktopsIcon()
 
 void RenderDecorationButtonIcon18By18::renderShadeIcon()
 {
+    bool isOddPenWidth = true;
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
+        if (boldButtonIcons) {
+            // thicker pen in titlebar
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1.2);
+        } else {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        }
+        pen.setWidthF(roundedBoldPenWidth);
+        painter->setPen(pen);
+    }
+
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->translate(QPointF(-adjustmentOffset, adjustmentOffset));
+    }
+
     painter->drawLine(QPointF(4, 4.5), QPointF(14, 4.5));
     painter->drawPolyline(QVector<QPointF>{QPointF(4, 13), QPointF(9, 8), QPointF(14, 13)});
 }
 
 void RenderDecorationButtonIcon18By18::renderUnShadeIcon()
 {
+    bool isOddPenWidth = true;
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
+        if (boldButtonIcons) {
+            // thicker pen in titlebar
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1.2);
+        } else {
+            isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        }
+        pen.setWidthF(roundedBoldPenWidth);
+        painter->setPen(pen);
+    }
+
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->translate(QPointF(-adjustmentOffset, adjustmentOffset));
+    }
+
     painter->drawLine(QPointF(4, 4.5), QPointF(14, 4.5));
     painter->drawPolyline(QVector<QPointF>{QPointF(4, 8), QPointF(9, 13), QPointF(14, 8)});
 }
@@ -170,6 +219,19 @@ void RenderDecorationButtonIcon18By18::renderKeepInFrontIcon()
 
 void RenderDecorationButtonIcon18By18::renderApplicationMenuIcon()
 {
+    bool isOddPenWidth = true;
+
+    if (!notInTitlebar) {
+        int roundedBoldPenWidth = 1;
+        isOddPenWidth = roundedPenWidthIsOdd(pen.widthF(), roundedBoldPenWidth, 1);
+        pen.setWidthF(roundedBoldPenWidth);
+    }
+
+    if (!isOddPenWidth) {
+        qreal adjustmentOffset = convertDevicePixelsTo18By18(0.5);
+        painter->translate(QPointF(-adjustmentOffset, -adjustmentOffset));
+    }
+
     painter->drawRect(QRectF(3.5, 4.5, 11, 1));
     painter->drawRect(QRectF(3.5, 8.5, 11, 1));
     painter->drawRect(QRectF(3.5, 12.5, 11, 1));
@@ -186,4 +248,18 @@ void RenderDecorationButtonIcon18By18::renderContextHelpIcon()
     painter->drawRect(QRectF(9, 15, 0.5, 0.5));
 }
 
+bool RenderDecorationButtonIcon18By18::roundedPenWidthIsOdd(const qreal &penWidth, int &outputRoundedPenWidth, const qreal boldingFactor)
+{
+    outputRoundedPenWidth = qRound(penWidth * boldingFactor);
+    return (outputRoundedPenWidth % 2 != 0);
+}
+
+qreal RenderDecorationButtonIcon18By18::convertDevicePixelsTo18By18(const qreal devicePixels)
+{
+    // the totalScalingFactor ensures that the value here converts from the scaled value on screen to the value rendered here in 18px.
+    // The dpr used gets the X11 value directly from the KDE scaling settings page, and is not the same as that from the paint device where on X11 it is 1
+    qreal totalScalingFactor = m_iconScaleFactor;
+    totalScalingFactor *= painter->device()->devicePixelRatioF(); // dpr from the paint device is always 1 on X11
+    return (devicePixels / totalScalingFactor);
+}
 }

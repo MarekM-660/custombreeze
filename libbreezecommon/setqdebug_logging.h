@@ -1,5 +1,5 @@
-#ifndef classiks_setqdebug_logging
-#define classiks_setqdebug_logging
+#ifndef KLASSY_SETQDEBUG_LOGGING_H
+#define KLASSY_SETQDEBUG_LOGGING_H
 
 #include "QDebug"
 #include "iostream"

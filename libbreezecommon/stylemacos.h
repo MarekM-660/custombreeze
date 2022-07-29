@@ -24,8 +24,13 @@ public:
      * @param boldButtonIcons When in titlebar this will draw bolder button icons if true
      */
 
-    RenderStyleMacOS18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons, const QSharedPointer<InternalSettings> internalSettings)
-        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons)
+    RenderStyleMacOS18By18(QPainter *painter,
+                           const bool notInTitlebar,
+                           const bool boldButtonIcons,
+                           const qreal devicePixelRatio,
+                           const bool iconScaleFactor,
+                           const QSharedPointer<InternalSettings> internalSettings)
+        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor)
         , m_internalSettings{internalSettings} {};
 
     void renderCloseIcon() override;
