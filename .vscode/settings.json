@@ -78,6 +78,8 @@
         "decorationbutton": "cpp",
         "decorationbuttongroup": "cpp",
         "qpainter": "cpp",
-        "qvariantanimation": "cpp"
+        "qvariantanimation": "cpp",
+        "ksharedconfig": "cpp",
+        "qpainterpath": "cpp"
     }
 }
