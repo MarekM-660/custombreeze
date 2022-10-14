@@ -20,17 +20,17 @@ public:
      * @brief Constructor - calls constructor of base class
      *
      * @param painter A QPainter object already initialised with an 18x18 reference window and pen.
-     * @param notInTitlebar Indicates that button is not to be drawn in the title bar, but somewhere else in the UI -- ususally means will be smaller
+     * @param fromKstyle Indicates that button is not to be drawn in the title bar, but somewhere else in the UI -- ususally means will be smaller
      * @param boldButtonIcons When in titlebar this will draw bolder button icons if true
      */
 
-    RenderStyleMacOS18By18(QPainter *painter,
-                           const bool notInTitlebar,
+    RenderStyleMacOS18By18(const QSharedPointer<InternalSettings> internalSettings,
+                           QPainter *painter,
+                           const bool fromKstyle,
                            const bool boldButtonIcons,
                            const qreal devicePixelRatio,
-                           const bool iconScaleFactor,
-                           const QSharedPointer<InternalSettings> internalSettings)
-        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor)
+                           const QPointF &deviceOffsetTitleBarTopLeftToIconTopLeft)
+        : RenderDecorationButtonIcon18By18(painter, fromKstyle, boldButtonIcons, devicePixelRatio, deviceOffsetTitleBarTopLeftToIconTopLeft)
         , m_internalSettings{internalSettings} {};
 
     void renderCloseIcon() override;

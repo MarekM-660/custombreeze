@@ -26,8 +26,8 @@ public:
     //* column type enumeration
     enum ColumnType {
         ColumnEnabled,
-        ColumnType,
-        ColumnRegExp,
+        ColumnWindowPropertyRegExp,
+        ColumnProgramNameRegExp,
     };
 
     //*@name methods reimplemented from base class

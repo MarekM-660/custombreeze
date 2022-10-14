@@ -33,7 +33,7 @@ ExceptionListWidget::ExceptionListWidget(QWidget *parent)
     m_ui.exceptionListView->setRootIsDecorated(false);
     m_ui.exceptionListView->setSortingEnabled(false);
     m_ui.exceptionListView->setModel(&model());
-    m_ui.exceptionListView->sortByColumn(ExceptionModel::ColumnType, Qt::AscendingOrder);
+    m_ui.exceptionListView->sortByColumn(ExceptionModel::ColumnWindowPropertyRegExp, Qt::AscendingOrder);
     m_ui.exceptionListView->setSizePolicy(QSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Ignored));
 
     m_ui.moveUpButton->setIcon(QIcon::fromTheme(QStringLiteral("arrow-up")));
@@ -67,8 +67,8 @@ void ExceptionListWidget::setExceptions(const InternalSettingsList &exceptions)
 //__________________________________________________________
 InternalSettingsList ExceptionListWidget::exceptions()
 {
-    return model().get();
     setChanged(false);
+    return model().get();
 }
 
 //__________________________________________________________
@@ -162,7 +162,7 @@ void ExceptionListWidget::remove()
     // confirmation dialog
     {
         QMessageBox messageBox(QMessageBox::Question,
-                               i18n("Question - Custom Settings"),
+                               i18n("Question - CustomBrezze Settings"),
                                i18n("Remove selected exception?"),
                                QMessageBox::Yes | QMessageBox::Cancel);
         messageBox.button(QMessageBox::Yes)->setText(i18n("Remove"));
@@ -282,15 +282,21 @@ void ExceptionListWidget::down()
 void ExceptionListWidget::resizeColumns() const
 {
     m_ui.exceptionListView->resizeColumnToContents(ExceptionModel::ColumnEnabled);
-    m_ui.exceptionListView->resizeColumnToContents(ExceptionModel::ColumnType);
-    m_ui.exceptionListView->resizeColumnToContents(ExceptionModel::ColumnRegExp);
+    m_ui.exceptionListView->resizeColumnToContents(ExceptionModel::ColumnProgramNameRegExp);
+    m_ui.exceptionListView->resizeColumnToContents(ExceptionModel::ColumnWindowPropertyRegExp);
 }
 
 //_______________________________________________________
 bool ExceptionListWidget::checkException(InternalSettingsPtr exception)
 {
-    while (exception->exceptionPattern().isEmpty() || !QRegularExpression(exception->exceptionPattern()).isValid()) {
-        QMessageBox::warning(this, i18n("Warning - Custom Settings"), i18n("Regular Expression syntax is incorrect"));
+    while ((exception->exceptionProgramNamePattern().isEmpty() && exception->exceptionWindowPropertyPattern().isEmpty())
+           || (exception->preventApplyOpacityToHeader() && exception->exceptionProgramNamePattern().isEmpty())
+           || !QRegularExpression(exception->exceptionProgramNamePattern()).isValid()
+           || !QRegularExpression(exception->exceptionWindowPropertyPattern()).isValid()) {
+        if (exception->preventApplyOpacityToHeader() && exception->exceptionProgramNamePattern().isEmpty()) {
+            QMessageBox::warning(this, i18n("Warning - CustomBrezze Settings"), i18n("Please provide an application name to match"));
+        } else
+            QMessageBox::warning(this, i18n("Warning - CustomBrezze Settings"), i18n("Regular Expression syntax is incorrect"));
         QPointer<ExceptionDialog> dialog(new ExceptionDialog(this));
         dialog->setException(exception);
         if (dialog->exec() == QDialog::Rejected) {

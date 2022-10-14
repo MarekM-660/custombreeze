@@ -1,6 +1,7 @@
 ################# Qt/KDE #################
 find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} REQUIRED CONFIG COMPONENTS Widgets DBus)
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
+    CoreAddons
     I18n
     Config
     GuiAddons
@@ -11,7 +12,7 @@ find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS
 find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} OPTIONAL_COMPONENTS Quick)
 set(BREEZE_HAVE_QTQUICK ${Qt5Quick_FOUND})
 if( BREEZE_HAVE_QTQUICK )
-    find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS Kirigami2)
+    find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS CoreAddons Kirigami2)
 endif()
 
 if (TARGET Qt5::Core)
@@ -73,6 +74,7 @@ set(breeze_PART_SRCS
     debug/breezewidgetexplorer.cpp
     breezeaddeventfilter.cpp
     breezeblurhelper.cpp
+    breezedecorationsettingsprovider.cpp
     breezeframeshadow.cpp
     breezehelper.cpp
     breezemdiwindowshadow.cpp

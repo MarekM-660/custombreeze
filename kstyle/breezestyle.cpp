@@ -33,6 +33,7 @@
 #include <QDial>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFontDatabase>
 #include <QFormLayout>
 #include <QGraphicsItem>
 #include <QGraphicsProxyWidget>
@@ -43,6 +44,7 @@
 #include <QMainWindow>
 #include <QMdiArea>
 #include <QMenu>
+#include <QMetaEnum>
 #include <QPainter>
 #include <QPushButton>
 #include <QRadioButton>
@@ -54,8 +56,8 @@
 #include <QToolButton>
 #include <QTreeView>
 #include <QWidgetAction>
-#include <array>
 #include <memory>
+#include <qnamespace.h>
 
 #if BREEZE_HAVE_QTQUICK
 #include <KCoreAddons>
@@ -418,7 +420,15 @@ void Style::polish(QWidget *widget)
 //______________________________________________________________
 void Style::polish(QApplication *application)
 {
+    const auto smallFont = QFontDatabase::systemFont(QFontDatabase::SmallestReadableFont);
+    application->setFont(smallFont, "QHeaderView");
     _toolsAreaManager->registerApplication(application);
+}
+
+//______________________________________________________________
+void Style::unpolish(QApplication *application)
+{
+    application->setFont(QFont(), "QHeaderView");
 }
 
 //______________________________________________________________
@@ -522,12 +532,24 @@ int Style::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWi
         return Metrics::MenuItem_HighlightGap;
 
     // small icon size
-    case PM_SmallIconSize:
-        if (isTabletMode()) {
-            return 22;
-        } else {
-            return 16;
+    case PM_SmallIconSize: {
+        auto iconSize = ParentStyleClass::pixelMetric(metric, option, widget);
+        if (!isTabletMode()) {
+            return iconSize;
         }
+
+        // in tablet mode, we try to figure out the next size and use it
+        // see bug 455513
+        auto metaEnum = QMetaEnum::fromType<KIconLoader::StdSizes>();
+        for (int i = 0; i + 1 < metaEnum.keyCount(); ++i) {
+            if (iconSize == metaEnum.value(i)) {
+                return metaEnum.value(i + 1);
+            }
+        }
+
+        // size is either too large or unknown, just increase it by 50%
+        return iconSize * 3 / 2;
+    }
 
     // frame width
     case PM_DefaultFrameWidth:
@@ -630,7 +652,7 @@ int Style::pixelMetric(PixelMetric metric, const QStyleOption *option, const QWi
         return pixelMetric(PM_SmallIconSize, option, widget) + 2 * Metrics::ToolButton_MarginWidth;
 
     case PM_ToolBarItemMargin:
-        return 0;
+        return Metrics::ToolBar_ItemMargin;
     case PM_ToolBarItemSpacing:
         return Metrics::ToolBar_ItemSpacing;
 
@@ -1313,9 +1335,16 @@ bool Style::event(QEvent *e)
                     focusWidget = focusProxy;
                     focusProxy = focusWidget->focusProxy();
                 }
-                target = focusWidget;
+                // by default we want to draw a focus frame only for the following widgets
+                if (focusWidget->inherits("QLineEdit") || focusWidget->inherits("QTextEdit") || focusWidget->inherits("QAbstractSpinBox")
+                    || focusWidget->inherits("QComboBox") || focusWidget->inherits("QPushButton") || focusWidget->inherits("QToolButton")
+                    || focusWidget->inherits("QCheckBox") || focusWidget->inherits("QRadioButton") || focusWidget->inherits("QSlider")
+                    || focusWidget->inherits("QDial") || focusWidget->inherits("QGroupBox")) {
+                    target = focusWidget;
+                }
             }
         }
+
         if (_focusFrame) {
             // sets to nullptr or a widget
             _focusFrame->setWidget(target);
@@ -1934,23 +1963,27 @@ QRect Style::progressBarContentsRect(const QStyleOption *option, const QWidget *
     const bool horizontal(BreezePrivate::isProgressBarHorizontal(progressBarOption));
 
     // check inverted appearance
-    const bool inverted(progressBarOption->invertedAppearance);
+    bool inverted(progressBarOption->invertedAppearance);
+    if (horizontal) {
+        // un-invert in RTL layout
+        inverted ^= option->direction == Qt::RightToLeft;
+    }
 
     // get progress and steps
-    const qreal progress(progressBarOption->progress - progressBarOption->minimum);
+    const int progress(progressBarOption->progress - progressBarOption->minimum);
     const int steps(qMax(progressBarOption->maximum - progressBarOption->minimum, 1));
 
     // Calculate width fraction
-    const qreal widthFrac = qMin(qreal(1), progress / steps);
+    const qreal position = qreal(progress) / qreal(steps);
+    const qreal visualPosition = inverted ? 1 - position : position;
 
     // convert the pixel width
-    const int indicatorSize(widthFrac * (horizontal ? rect.width() : rect.height()));
+    const int indicatorSize(visualPosition * (horizontal ? rect.width() : rect.height()));
 
     QRect indicatorRect;
     if (horizontal) {
-        indicatorRect = QRect(inverted ? (rect.right() - indicatorSize + 1) : rect.left(), rect.y(), indicatorSize, rect.height());
+        indicatorRect = QRect(rect.left(), rect.y(), indicatorSize, rect.height());
         indicatorRect = visualRect(option->direction, rect, indicatorRect);
-
     } else
         indicatorRect = QRect(rect.x(), inverted ? rect.top() : (rect.bottom() - indicatorSize + 1), rect.width(), indicatorSize);
 
@@ -2887,9 +2920,9 @@ bool Style::scrollBarAutoHideArrowsException(const QWidget *widget) const
     bool exception = false;
 
     if (widget) {
-        std::array<const char *, 1> exceptionClassNames = {"KateScrollBar"};
-        for (unsigned i = 0; i < exceptionClassNames.size(); i++) {
-            if (!strcmp(widget->metaObject()->className(), exceptionClassNames[i])) {
+        QVector<const char *> exceptionClassNames = {"KateScrollBar"};
+        for (int i = 0; i < exceptionClassNames.size(); i++) {
+            if (widget->inherits(exceptionClassNames[i])) {
                 exception = true;
                 break;
             }
@@ -3993,6 +4026,7 @@ bool Style::drawPanelButtonCommandPrimitive(const QStyleOption *option, QPainter
     stateProperties["hasMenu"] = hasMenu;
     stateProperties["defaultButton"] = defaultButton;
     stateProperties["hasNeutralHighlight"] = hasNeutralHighlight;
+    stateProperties["isActiveWindow"] = widget ? widget->isActiveWindow() : true;
 
     _helper->renderButtonFrame(painter, option->rect, option->palette, stateProperties, bgAnimation, penAnimation);
 
@@ -4037,6 +4071,7 @@ bool Style::drawPanelButtonToolPrimitive(const QStyleOption *option, QPainter *p
     stateProperties["checked"] = checked;
     stateProperties["flat"] = flat;
     stateProperties["hasNeutralHighlight"] = hasNeutralHighlight;
+    stateProperties["isActiveWindow"] = widget ? widget->isActiveWindow() : true;
 
     _helper->renderButtonFrame(painter, baseRect, option->palette, stateProperties, bgAnimation, penAnimation);
     if (painter->hasClipping()) {
@@ -4137,7 +4172,7 @@ bool Style::drawPanelMenuPrimitive(const QStyleOption *option, QPainter *painter
     painter->save();
 
     if (StyleConfigData::menuOpacity() < 100) {
-        if (painter && widget && widget->isWindow()) {
+        if (widget && widget->isWindow()) {
             painter->setCompositionMode(QPainter::CompositionMode_Source);
         }
         background.setAlphaF(StyleConfigData::menuOpacity() / 100.0);
@@ -4300,7 +4335,7 @@ bool Style::drawIndicatorRadioButtonPrimitive(const QStyleOption *option, QPaint
     const bool mouseOver(enabled && (state & State_MouseOver));
 
     // radio button state
-    RadioButtonState radioButtonState(state & State_On ? RadioOn : RadioOff);
+    RadioButtonState radioButtonState((state & State_On) ? RadioOn : RadioOff);
 
     // animation state
     _animations->widgetStateEngine().updateState(widget, AnimationHover, mouseOver);
@@ -4358,6 +4393,7 @@ bool Style::drawIndicatorButtonDropDownPrimitive(const QStyleOption *option, QPa
     stateProperties["checked"] = checked;
     stateProperties["flat"] = flat;
     stateProperties["hasNeutralHighlight"] = hasNeutralHighlight;
+    stateProperties["isActiveWindow"] = widget ? widget->isActiveWindow() : true;
 
     _helper->renderButtonFrame(painter, baseRect, option->palette, stateProperties, bgAnimation, penAnimation);
 
@@ -4814,8 +4850,9 @@ bool Style::drawToolButtonLabelControl(const QStyleOption *option, QPainter *pai
                 iconSize);
         }
 
-        textRect = QRect(QPoint(iconRect.right() + Metrics::ToolButton_ItemSpacing + 1, contentsRect.top() + (contentsRect.height() - textSize.height()) / 2),
-                         textSize);
+        const int padding = (contentsRect.height() - textSize.height()) / 2;
+        textRect = QRect(QPoint(iconRect.right() + Metrics::ToolButton_ItemSpacing + 1, contentsRect.top() + padding),
+                         QPoint(contentsRect.right(), contentsRect.bottom() - padding));
 
         // handle right to left layouts
         iconRect = visualRect(option, iconRect);
@@ -5292,7 +5329,10 @@ bool Style::drawMenuItemControl(const QStyleOption *option, QPainter *painter, c
             const int textFlags(Qt::AlignVCenter | Qt::AlignRight);
             QString accelerator(text.mid(tabPosition + 1));
             text = text.left(tabPosition);
+            painter->save();
+            painter->setOpacity(0.7);
             drawItemText(painter, textRect, textFlags, palette, enabled, accelerator, role);
+            painter->restore();
         }
 
         // render text
@@ -5329,6 +5369,8 @@ bool Style::drawProgressBarControl(const QStyleOption *option, QPainter *painter
 
     const QObject *styleObject(widget ? widget : progressBarOption->styleObject);
 
+    const bool busy(progressBarOption->minimum == 0 && progressBarOption->maximum == 0);
+
     // enable busy animations
     // need to check both widget and passed styleObject, used for QML
     if (styleObject && _animations->busyIndicatorEngine().enabled()) {
@@ -5337,7 +5379,7 @@ bool Style::drawProgressBarControl(const QStyleOption *option, QPainter *painter
             _animations->busyIndicatorEngine().registerWidget(progressBarOption->styleObject);
         }
 
-        _animations->busyIndicatorEngine().setAnimated(styleObject, progressBarOption->maximum == 0 && progressBarOption->minimum == 0);
+        _animations->busyIndicatorEngine().setAnimated(styleObject, busy);
     }
 
     // check if animated and pass to option
@@ -5351,7 +5393,6 @@ bool Style::drawProgressBarControl(const QStyleOption *option, QPainter *painter
 
     // render text
     const bool textVisible(progressBarOption->textVisible);
-    const bool busy(progressBarOption->minimum == 0 && progressBarOption->maximum == 0);
     if (textVisible && !busy) {
         progressBarOption2.rect = subElementRect(SE_ProgressBarLabel, progressBarOption, widget);
         drawControl(CE_ProgressBarLabel, &progressBarOption2, painter, widget);
@@ -5908,7 +5949,8 @@ bool Style::drawFocusFrame(const QStyleOption *option, QPainter *painter, const 
         outerRect = innerRect.adjusted(-hmargin, -vmargin, hmargin, vmargin);
         focusFramePath.addRoundedRect(outerRect, outerRadius, outerRadius);
     } else {
-        return true;
+        focusFramePath.addRoundedRect(innerRect, innerRadius, innerRadius);
+        focusFramePath.addRoundedRect(outerRect, outerRadius, outerRadius);
     }
 
     auto outerColor = _helper->alphaColor(option->palette.highlight().color(), 0.33);
@@ -6725,6 +6767,7 @@ bool Style::drawComboBoxComplexControl(const QStyleOptionComplex *option, QPaint
             stateProperties["down"] = down || checked;
             stateProperties["flat"] = flat;
             stateProperties["hasNeutralHighlight"] = hasNeutralHighlight;
+            stateProperties["isActiveWindow"] = widget ? widget->isActiveWindow() : true;
 
             _helper->renderButtonFrame(painter, option->rect, option->palette, stateProperties, bgAnimation, penAnimation);
         }
@@ -6882,6 +6925,7 @@ bool Style::drawSliderComplexControl(const QStyleOptionComplex *option, QPainter
             }
 
             // colors
+            const auto reverseTicks = option->direction == Qt::LeftToRight ? upsideDown : !upsideDown;
             const auto base(_helper->separatorColor(palette));
             const auto &highlight =
                 hasHighlightNeutral(widget, option, mouseOver, hasFocus) ? _helper->neutralText(palette) : palette.color(QPalette::Highlight);
@@ -6895,9 +6939,9 @@ bool Style::drawSliderComplexControl(const QStyleOptionComplex *option, QPainter
                 int position(sliderPositionFromValue(sliderOption->minimum, sliderOption->maximum, current, available) + fudge);
                 foreach (const QLine &tickLine, tickLines) {
                     if (horizontal)
-                        painter->drawLine(tickLine.translated(upsideDown ? (rect.width() - position) : position, 0));
+                        painter->drawLine(tickLine.translated(reverseTicks ? (rect.width() - position) : position, 0));
                     else
-                        painter->drawLine(tickLine.translated(0, upsideDown ? (rect.height() - position) : position));
+                        painter->drawLine(tickLine.translated(0, reverseTicks ? (rect.height() - position) : position));
                 }
 
                 // go to next position
@@ -6929,12 +6973,15 @@ bool Style::drawSliderComplexControl(const QStyleOptionComplex *option, QPainter
             if (sliderOption->orientation == Qt::Horizontal) {
                 auto leftRect(grooveRect);
                 leftRect.setRight(handleRect.right() - Metrics::Slider_ControlThickness / 2);
-                _helper->renderSliderGroove(painter, leftRect, upsideDown ? grooveColor : highlight);
 
                 auto rightRect(grooveRect);
                 rightRect.setLeft(handleRect.left() + Metrics::Slider_ControlThickness / 2);
-                _helper->renderSliderGroove(painter, rightRect, upsideDown ? highlight : grooveColor);
 
+                if (option->direction == Qt::RightToLeft)
+                    std::swap(leftRect, rightRect);
+
+                _helper->renderSliderGroove(painter, leftRect, upsideDown ? grooveColor : highlight);
+                _helper->renderSliderGroove(painter, rightRect, upsideDown ? highlight : grooveColor);
             } else {
                 auto topRect(grooveRect);
                 topRect.setBottom(handleRect.bottom() - Metrics::Slider_ControlThickness / 2);
@@ -7782,12 +7829,6 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
     // output icon
     QIcon icon;
 
-    qreal devicePixelRatio;
-    if (widget)
-        devicePixelRatio = widget->devicePixelRatio();
-    else
-        devicePixelRatio = 1;
-
     foreach (const IconData &iconData, iconTypes) {
         foreach (const int &iconSize, iconSizes) {
             // create pixmap
@@ -7803,8 +7844,7 @@ QIcon Style::titleBarButtonIcon(StandardPixmap standardPixmap, const QStyleOptio
                                             iconData._inverted,
                                             iconData._paintBackground,
                                             iconData._backgroundColor,
-                                            iconData._outlineColor,
-                                            devicePixelRatio);
+                                            iconData._outlineColor);
 
             painter.end();
 

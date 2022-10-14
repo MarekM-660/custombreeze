@@ -493,6 +493,18 @@ bool WindowManager::isBlackListed(QWidget *widget)
     return false;
 }
 
+//____________________________________________________________
+bool WindowManager::isDockWidgetTitle(const QWidget *widget) const
+{
+    if (!widget)
+        return false;
+    if (auto dockWidget = qobject_cast<const QDockWidget *>(widget->parent())) {
+        return widget == dockWidget->titleBarWidget();
+
+    } else
+        return false;
+}
+
 //_____________________________________________________________
 bool WindowManager::isWhiteListed(QWidget *widget) const
 {
@@ -715,17 +727,5 @@ void WindowManager::startDrag(QWindow *window)
     {
         _dragInProgress = window->startSystemMove();
     }
-}
-
-//____________________________________________________________
-bool WindowManager::isDockWidgetTitle(const QWidget *widget) const
-{
-    if (!widget)
-        return false;
-    if (auto dockWidget = qobject_cast<const QDockWidget *>(widget->parent())) {
-        return widget == dockWidget->titleBarWidget();
-
-    } else
-        return false;
 }
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>641</width>
-    <height>414</height>
+    <width>633</width>
+    <height>381</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>Full-Height Integrated Rounded Rectangle Width &amp;&amp; Spacing</string>
+      <string>Integrated Rounded Rectangle Width &amp;&amp; Spacing</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <item>
@@ -108,9 +108,9 @@
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>:/klassy_config_icons/object-unlocked-symbolic.svg</normaloff>
-            <normalon>:/klassy_config_icons/object-locked-symbolic.svg</normalon>:/klassy_config_icons/object-unlocked-symbolic.svg</iconset>
+           <iconset resource="customdecoration_config.qrc">
+            <normaloff>:/custom_config_icons/object-unlocked-symbolic.svg</normaloff>
+            <normalon>:/custom_config_icons/object-locked-symbolic.svg</normalon>:/custom_config_icons/object-unlocked-symbolic.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -267,9 +267,9 @@ Left-hand buttons:</string>
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>:/klassy_config_icons/object-unlocked-symbolic.svg</normaloff>
-            <normalon>:/klassy_config_icons/object-locked-symbolic.svg</normalon>:/klassy_config_icons/object-unlocked-symbolic.svg</iconset>
+           <iconset resource="customdecoration_config.qrc">
+            <normaloff>:/custom_config_icons/object-unlocked-symbolic.svg</normaloff>
+            <normalon>:/custom_config_icons/object-locked-symbolic.svg</normalon>:/custom_config_icons/object-unlocked-symbolic.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -458,9 +458,9 @@ Right-hand buttons:</string>
            <string/>
           </property>
           <property name="icon">
-           <iconset>
-            <normaloff>:/klassy_config_icons/object-unlocked-symbolic.svg</normaloff>
-            <normalon>:/klassy_config_icons/object-locked-symbolic.svg</normalon>:/klassy_config_icons/object-unlocked-symbolic.svg</iconset>
+           <iconset resource="customdecoration_config.qrc">
+            <normaloff>:/custom_config_icons/object-unlocked-symbolic.svg</normaloff>
+            <normalon>:/custom_config_icons/object-locked-symbolic.svg</normalon>:/custom_config_icons/object-unlocked-symbolic.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -498,7 +498,7 @@ Right-hand buttons:</string>
          </spacer>
         </item>
         <item row="1" column="1">
-         <widget class="QDoubleSpinBox" name="fullHeightIntegratedRoundedRectangleBottomPadding">
+         <widget class="QDoubleSpinBox" name="integratedRoundedRectangleBottomPadding">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -533,7 +533,7 @@ Right-hand buttons:</string>
          </spacer>
         </item>
         <item row="0" column="0" colspan="3">
-         <widget class="QLabel" name="fullHeightIntegratedRoundedRectangleBottomPaddingLabel">
+         <widget class="QLabel" name="integratedRoundedRectangleBottomPaddingLabel">
           <property name="text">
            <string>Bottom padding:</string>
           </property>
@@ -541,7 +541,7 @@ Right-hand buttons:</string>
            <set>Qt::AlignCenter</set>
           </property>
           <property name="buddy">
-           <cstring>fullHeightIntegratedRoundedRectangleBottomPadding</cstring>
+           <cstring>integratedRoundedRectangleBottomPadding</cstring>
           </property>
          </widget>
         </item>
@@ -586,7 +586,7 @@ Right-hand buttons:</string>
   <tabstop>fullHeightButtonSpacingLeft</tabstop>
   <tabstop>lockFullHeightButtonSpacingLeftRight</tabstop>
   <tabstop>fullHeightButtonSpacingRight</tabstop>
-  <tabstop>fullHeightIntegratedRoundedRectangleBottomPadding</tabstop>
+  <tabstop>integratedRoundedRectangleBottomPadding</tabstop>
  </tabstops>
  <resources>
   <include location="customdecoration_config.qrc"/>

@@ -634,7 +634,7 @@ void Decoration::reconfigure()
 
     if (m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
         || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
-        || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
+        || m_internalSettings->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle)
         m_buttonBackgroundType = ButtonBackgroundType::FullHeight;
     else
         m_buttonBackgroundType = ButtonBackgroundType::Small;
@@ -777,8 +777,8 @@ void Decoration::updateButtonsGeometry()
     int buttonSpacingLeft = 0;
     int buttonSpacingRight = 0;
 
-    if (internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
-        buttonTopMargin -= int(qRound(qreal(internalSettings()->fullHeightIntegratedRoundedRectangleBottomPadding()) * qreal(s->smallSpacing()) / 2.0));
+    if (internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle)
+        buttonTopMargin -= int(qRound(qreal(internalSettings()->integratedRoundedRectangleBottomPadding()) * qreal(s->smallSpacing()) / 2.0));
 
     if (m_buttonBackgroundType == ButtonBackgroundType::FullHeight) {
         bHeight = borderTop();
@@ -1169,7 +1169,7 @@ void Decoration::calculateButtonHeights()
             baseSize *= 1.8;
             break;
         default:
-        case InternalSettings::IconDefault: // 20, 18 on Wayland
+        case InternalSettings::IconMedium: // 20, 18 on Wayland
             baseSize *= 2;
             break;
         case InternalSettings::IconLargeMedium: // 22, 20 on Wayland
@@ -1365,10 +1365,10 @@ QSharedPointer<KDecoration2::DecorationShadow> Decoration::createShadowObject(co
     boxRect.moveCenter(outerRect.center());
 
     // Mask out inner rect.
-    const QMargins padding = QMargins(boxRect.left() - outerRect.left() - Metrics::Shadow_Overlap - params.offset.x(),
-                                      boxRect.top() - outerRect.top() - Metrics::Shadow_Overlap - params.offset.y(),
-                                      outerRect.right() - boxRect.right() - Metrics::Shadow_Overlap + params.offset.x(),
-                                      outerRect.bottom() - boxRect.bottom() - Metrics::Shadow_Overlap + params.offset.y());
+    const QMargins padding = QMargins(boxRect.left() - outerRect.left() - Metrics::Decoration_Shadow_Overlap - params.offset.x(),
+                                      boxRect.top() - outerRect.top() - Metrics::Decoration_Shadow_Overlap - params.offset.y(),
+                                      outerRect.right() - boxRect.right() - Metrics::Decoration_Shadow_Overlap + params.offset.x(),
+                                      outerRect.bottom() - boxRect.bottom() - Metrics::Decoration_Shadow_Overlap + params.offset.y());
     const QRectF innerRect = outerRect - padding;
 
     painter.setPen(Qt::NoPen);
@@ -1601,7 +1601,7 @@ void Decoration::setAddedTitleBarOpacity()
     m_addedTitleBarOpacityActive = 1;
     m_addedTitleBarOpacityInactive = 1;
 
-    if (!(c->isMaximized() && m_internalSettings->opaqueMaximizedTitlebars())) {
+    if (!(m_internalSettings->opaqueTitleBar() || (c->isMaximized() && m_internalSettings->opaqueMaximizedTitlebars()))) {
         // only add additional translucency if the system colour does not already have translucency
         QColor systemActiveTitleBarColor = c->color(ColorGroup::Active, ColorRole::TitleBar);
         QColor systemInactiveTitlebarColor = c->color(ColorGroup::Inactive, ColorRole::TitleBar);
@@ -1622,10 +1622,8 @@ void Decoration::updateOpaque()
     // access client
     auto c = client().toStrongRef();
     Q_ASSERT(c);
-    int titleBarOpacityToAdd = c->isActive() ? m_internalSettings->activeTitlebarOpacity() : m_internalSettings->inactiveTitlebarOpacity();
 
-    if ((m_internalSettings->opaqueMaximizedTitlebars() && c->isMaximized())
-        || (titleBarOpacityToAdd == 100 && titleBarColor(true).alpha() == 255)) { // opaque titlebar colours
+    if (isOpaqueTitleBar()) { // opaque titlebar colours
         if (c->isMaximized())
             setOpaque(true);
         else
@@ -1637,14 +1635,8 @@ void Decoration::updateOpaque()
 
 void Decoration::updateBlur()
 {
-    // access client
-    auto c = client().toStrongRef();
-    Q_ASSERT(c);
-    int titleBarOpacityToAdd = c->isActive() ? m_internalSettings->activeTitlebarOpacity() : m_internalSettings->inactiveTitlebarOpacity();
-
     // disable blur if the titlebar is opaque
-    if ((m_internalSettings->opaqueMaximizedTitlebars() && c->isMaximized())
-        || (titleBarOpacityToAdd == 100 && titleBarColor(true).alpha() == 255)) { // opaque titlebar colours
+    if (isOpaqueTitleBar()) { // opaque titlebar colours
         setBlurRegion(QRegion());
     } else { // transparent titlebar colours
         if (m_internalSettings->blurTransparentTitlebars()) { // enable blur
@@ -1653,6 +1645,17 @@ void Decoration::updateBlur()
         } else
             setBlurRegion(QRegion());
     }
+}
+
+bool Decoration::isOpaqueTitleBar()
+{
+    // access client
+    auto c = client().toStrongRef();
+    Q_ASSERT(c);
+    int titleBarOpacityToAdd = c->isActive() ? m_internalSettings->activeTitlebarOpacity() : m_internalSettings->inactiveTitlebarOpacity();
+
+    return (m_internalSettings->opaqueTitleBar() // exception override
+            || (m_internalSettings->opaqueMaximizedTitlebars() && c->isMaximized()) || (titleBarOpacityToAdd == 100 && titleBarColor(true).alpha() == 255));
 }
 
 int Decoration::titleBarSeparatorHeight() const

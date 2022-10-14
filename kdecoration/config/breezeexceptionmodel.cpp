@@ -15,7 +15,9 @@ namespace Breeze
 {
 
 //_______________________________________________
-const QString ExceptionModel::m_columnTitles[ExceptionModel::nColumns] = {QStringLiteral(""), i18n("Exception Type"), i18n("Regular Expression")};
+const QString ExceptionModel::m_columnTitles[ExceptionModel::nColumns] = {QStringLiteral(""),
+                                                                          i18n("Window Property Regular Expression"),
+                                                                          i18n("Application Name Regular Expression")};
 
 //__________________________________________________________________
 QVariant ExceptionModel::data(const QModelIndex &index, int role) const
@@ -30,19 +32,12 @@ QVariant ExceptionModel::data(const QModelIndex &index, int role) const
     // return text associated to file and column
     if (role == Qt::DisplayRole) {
         switch (index.column()) {
-        case ColumnType: {
-            switch (configuration->exceptionType()) {
-            case InternalSettings::ExceptionWindowTitle:
-                return i18n("Window Title");
+        case ColumnWindowPropertyRegExp:
+            return configuration->exceptionWindowPropertyPattern();
 
-            default:
-            case InternalSettings::ExceptionWindowClassName:
-                return i18n("Window Class Name");
-            }
-        }
+        case ColumnProgramNameRegExp:
+            return configuration->exceptionProgramNamePattern();
 
-        case ColumnRegExp:
-            return configuration->exceptionPattern();
         default:
             return QVariant();
             break;

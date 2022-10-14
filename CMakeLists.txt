@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 project(CustomBreeze)
-set(PROJECT_VERSION "1.0")
+set(PROJECT_VERSION "0.2")
 set(PROJECT_VERSION_MAJOR 5)
 
 add_definitions( -DCUSTOM_VERSION="${PROJECT_VERSION}" -DCUSTOM_GIT_MASTER=1)
@@ -15,6 +15,7 @@ include(FeatureSummary)
 
 find_package(ECM ${KF5_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include(CMakePackageConfigHelpers)
 include(ECMInstallIcons)

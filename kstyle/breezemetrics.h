@@ -13,25 +13,6 @@
 
 namespace Breeze
 {
-//* standard pen widths
-struct PenWidth {
-    /* Using 1 instead of slightly more than 1 causes symbols drawn with
-     * pen strokes to look skewed. The exact amount added does not matter
-     * as long as it isn't too visible. Even with QPen::setCosmetic(true),
-     * 1px pen widths still look slightly worse.
-     */
-    // The standard pen stroke width for symbols.
-    static constexpr qreal Symbol = 1.001;
-
-    // The standard pen stroke width for frames.
-    static constexpr qreal Frame = 1.001;
-
-    // The standard pen stroke width for shadows.
-    static constexpr qreal Shadow = 1.001;
-
-    // A value for pen width arguments to make it clear that there is no pen stroke
-    static constexpr int NoPen = 0;
-};
 
 //* metrics
 namespace Metrics
@@ -102,11 +83,12 @@ static int const &ScrollBar_SingleButtonHeight = ScrollBar_Extend + ScrollBar_To
 static int const &ScrollBar_DoubleButtonHeight = 2 * ScrollBar_Extend + ScrollBar_TopBottomMargins;
 
 // toolbars
-static constexpr int ToolBar_FrameWidth = 6;
+static constexpr int ToolBar_FrameWidth = 0;
 static constexpr int ToolBar_HandleExtent = 10;
 static constexpr int ToolBar_HandleWidth = 6;
 static constexpr int ToolBar_SeparatorWidth = 8;
 static constexpr int ToolBar_ExtensionWidth = 20;
+static constexpr int ToolBar_ItemMargin = 6;
 static constexpr int ToolBar_ItemSpacing = 0;
 
 // progressbars
@@ -144,7 +126,7 @@ static constexpr int ToolBox_TabMarginWidth = 8;
 static constexpr int ToolTip_FrameWidth = 3;
 
 // list headers
-static constexpr int Header_MarginWidth = 6;
+static constexpr int Header_MarginWidth = 4;
 static constexpr int Header_ItemSpacing = 4;
 static constexpr int Header_ArrowSize = 10;
 

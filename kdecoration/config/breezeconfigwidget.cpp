@@ -10,7 +10,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "breezeconfigwidget.h"
-#include "breezeexceptionlist.h"
+#include "decorationexceptionlist.h"
 
 #include <KLocalizedString>
 
@@ -27,7 +27,7 @@ namespace Breeze
 //_________________________________________________________
 ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     : KCModule(parent, args)
-    , m_configuration(KSharedConfig::openConfig(QStringLiteral("klassyrc")))
+    , m_configuration(KSharedConfig::openConfig(QStringLiteral("custombreezeyrc")))
     , m_changed(false)
 {
     QDialog *parentDialog = qobject_cast<QDialog *>(parent);
@@ -49,6 +49,17 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
 
     // configuration
     m_ui.setupUi(this);
+
+    // hide the push buttons for default exceptions
+    QList<QPushButton *> defaultPushButtons = m_ui.defaultExceptions->findChildren<QPushButton *>();
+    for (QPushButton *defaultPushButton : defaultPushButtons) {
+        QSizePolicy spRetain = defaultPushButton->sizePolicy();
+        spRetain.setRetainSizeWhenHidden(true);
+        defaultPushButton->setSizePolicy(spRetain);
+
+        defaultPushButton->hide();
+    }
+
     m_buttonSizingDialog = new ButtonSizing(this);
 
     // this is necessary because when you reload the kwin config in a sub-dialog it prevents this main dialog from saving (this happens when run from
@@ -73,10 +84,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     QIcon useSystemIconThemeIcon = QIcon::fromTheme(QStringLiteral("preferences-desktop-icons"));
     m_ui.buttonIconStyle->addItem(useSystemIconThemeIcon, "Use system icon theme");
 
-    connect(m_ui.fullHeightIntegratedRoundedRectangleSizingButton,
-            &QAbstractButton::clicked,
-            this,
-            &ConfigWidget::fullHeightIntegratedRoundedRectangleSizingButtonClicked);
+    connect(m_ui.integratedRoundedRectangleSizingButton, &QAbstractButton::clicked, this, &ConfigWidget::integratedRoundedRectangleSizingButtonClicked);
 
     connect(m_ui.fullHeightRectangleSizingButton, &QAbstractButton::clicked, this, &ConfigWidget::fullHeightRectangleSizingButtonClicked);
 
@@ -166,6 +174,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.colorizeThinWindowOutlineWithButton, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
 
     // track exception changes
+    connect(m_ui.defaultExceptions, &ExceptionListWidget::changed, this, &ConfigWidget::updateChanged);
     connect(m_ui.exceptions, &ExceptionListWidget::changed, this, &ConfigWidget::updateChanged);
 }
 
@@ -257,8 +266,13 @@ void ConfigWidget::load()
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
     // load exceptions
-    ExceptionList exceptions;
+    DecorationExceptionList exceptions;
     exceptions.readConfig(m_configuration);
+    if (exceptions.numberDefaults()) {
+        m_ui.defaultExceptions->setExceptions(exceptions.getDefault());
+    } else {
+        m_ui.defaultExceptions->hide();
+    }
     m_ui.exceptions->setExceptions(exceptions.get());
     setChanged(false);
     m_loading = false;
@@ -329,7 +343,8 @@ void ConfigWidget::save()
 
     // get list of exceptions and write
     InternalSettingsList exceptions(m_ui.exceptions->exceptions());
-    ExceptionList(exceptions).writeConfig(m_configuration);
+    InternalSettingsList defaultExceptions(m_ui.defaultExceptions->exceptions());
+    DecorationExceptionList(exceptions, defaultExceptions).writeConfig(m_configuration);
 
     // sync configuration
     m_configuration->sync();
@@ -343,7 +358,7 @@ void ConfigWidget::save()
 
     // needed for breeze style to reload shadows
     {
-        QDBusMessage message(QDBusMessage::createSignal("/CustomDecoration", "org.kde.Custom.Style", "reparseConfiguration"));
+        QDBusMessage message(QDBusMessage::createSignal("/CustomBrezzeDecoration", "org.kde.CustomBrezze.Style", "reparseConfiguration"));
         QDBusConnection::sessionBus().send(message);
     }
 }
@@ -410,6 +425,15 @@ void ConfigWidget::defaults()
     m_buttonSizingDialog->defaults();
 
     updateButtonStyleStackedWidgetVisible();
+    // load default exceptions and refresh (leave user-set exceptions alone)
+    DecorationExceptionList exceptions;
+    exceptions.readConfig(m_configuration, true);
+    if (exceptions.numberDefaults()) {
+        m_ui.defaultExceptions->setExceptions(exceptions.getDefault());
+    } else {
+        m_ui.defaultExceptions->hide();
+    }
+
     updateIconsStackedWidgetVisible();
     updateBackgroundShapeStackedWidgetVisible();
     updateCustomColorStackedWidgetVisible();
@@ -532,6 +556,8 @@ void ConfigWidget::updateChanged()
         modified = true;
 
     // exceptions
+    else if (m_ui.defaultExceptions->isChanged())
+        modified = true;
     else if (m_ui.exceptions->isChanged())
         modified = true;
 
@@ -604,11 +630,11 @@ void ConfigWidget::updateBackgroundShapeStackedWidgetVisible()
 {
     if (m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRectangle
         || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle
-        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle
+        || m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle
         || m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleMacOS
         || m_ui.buttonIconStyle->currentIndex() == InternalSettings::EnumButtonIconStyle::StyleSweet)
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(1);
-    else if (m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle)
+    else if (m_ui.buttonShape->currentIndex() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle)
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(2);
     else
         m_ui.backgroundShapeStackedWidget->setCurrentIndex(0);
@@ -683,11 +709,11 @@ void ConfigWidget::dialogChanged(bool changed)
     setChanged(changed);
 }
 
-void ConfigWidget::fullHeightIntegratedRoundedRectangleSizingButtonClicked()
+void ConfigWidget::integratedRoundedRectangleSizingButtonClicked()
 {
     m_buttonSizingDialog->setGeometry(0, 0, m_buttonSizingDialog->geometry().width(), 400);
-    m_buttonSizingDialog->setWindowTitle(i18n("Button Width & Spacing - Klassy Settings"));
-    m_buttonSizingDialog->m_ui.groupBox->setTitle(i18n("Full-height Integrated Rounded Rectangle Width && Spacing"));
+    m_buttonSizingDialog->setWindowTitle(i18n("Button Width & Spacing - CustomBrezze Settings"));
+    m_buttonSizingDialog->m_ui.groupBox->setTitle(i18n("Integrated Rounded Rectangle Width && Spacing"));
 
     m_buttonSizingDialog->m_ui.scaleBackgroundPercentLabel->setVisible(false);
     m_buttonSizingDialog->m_ui.scaleBackgroundPercent->setVisible(false);
@@ -716,8 +742,8 @@ void ConfigWidget::fullHeightIntegratedRoundedRectangleSizingButtonClicked()
     m_buttonSizingDialog->m_ui.buttonSpacingRight->setVisible(false);
     m_buttonSizingDialog->m_ui.buttonSpacingRightLine->setVisible(false);
 
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPadding->setVisible(true);
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPaddingLabel->setVisible(true);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPadding->setVisible(true);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPaddingLabel->setVisible(true);
 
     m_buttonSizingDialog->m_ui.verticalSpacer_2->changeSize(20, 40, QSizePolicy::Fixed, QSizePolicy::Expanding);
     m_buttonSizingDialog->m_ui.verticalSpacer_3->changeSize(20, 40, QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -729,7 +755,7 @@ void ConfigWidget::fullHeightIntegratedRoundedRectangleSizingButtonClicked()
 void ConfigWidget::fullHeightRectangleSizingButtonClicked()
 {
     m_buttonSizingDialog->setGeometry(0, 0, m_buttonSizingDialog->geometry().width(), 300);
-    m_buttonSizingDialog->setWindowTitle(i18n("Button Width & Spacing - Klassy Settings"));
+    m_buttonSizingDialog->setWindowTitle(i18n("Button Width & Spacing - CustomBrezze Settings"));
     m_buttonSizingDialog->m_ui.groupBox->setTitle(i18n("Full-height Rectangle Width && Spacing"));
 
     m_buttonSizingDialog->m_ui.scaleBackgroundPercentLabel->setVisible(false);
@@ -759,8 +785,8 @@ void ConfigWidget::fullHeightRectangleSizingButtonClicked()
     m_buttonSizingDialog->m_ui.buttonSpacingRight->setVisible(false);
     m_buttonSizingDialog->m_ui.buttonSpacingRightLine->setVisible(false);
 
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPadding->setVisible(false);
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPaddingLabel->setVisible(false);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPadding->setVisible(false);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPaddingLabel->setVisible(false);
 
     m_buttonSizingDialog->m_ui.verticalSpacer_2->changeSize(20, 40, QSizePolicy::Fixed, QSizePolicy::Expanding);
     m_buttonSizingDialog->m_ui.verticalSpacer_3->changeSize(20, 40, QSizePolicy::Fixed, QSizePolicy::Expanding);
@@ -772,7 +798,7 @@ void ConfigWidget::fullHeightRectangleSizingButtonClicked()
 void ConfigWidget::buttonSizingButtonClicked()
 {
     m_buttonSizingDialog->setGeometry(0, 0, m_buttonSizingDialog->geometry().width(), 275);
-    m_buttonSizingDialog->setWindowTitle(i18n("Button Size & Spacing - Klassy Settings"));
+    m_buttonSizingDialog->setWindowTitle(i18n("Button Size & Spacing - CustomBrezze Settings"));
     m_buttonSizingDialog->m_ui.groupBox->setTitle(i18n("Button Size && Spacing"));
 
     m_buttonSizingDialog->m_ui.scaleBackgroundPercentLabel->setVisible(true);
@@ -802,8 +828,8 @@ void ConfigWidget::buttonSizingButtonClicked()
     m_buttonSizingDialog->m_ui.buttonSpacingRight->setVisible(true);
     m_buttonSizingDialog->m_ui.buttonSpacingRightLine->setVisible(true);
 
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPadding->setVisible(false);
-    m_buttonSizingDialog->m_ui.fullHeightIntegratedRoundedRectangleBottomPaddingLabel->setVisible(false);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPadding->setVisible(false);
+    m_buttonSizingDialog->m_ui.integratedRoundedRectangleBottomPaddingLabel->setVisible(false);
 
     m_buttonSizingDialog->m_ui.verticalSpacer_2->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
     m_buttonSizingDialog->m_ui.verticalSpacer_3->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);

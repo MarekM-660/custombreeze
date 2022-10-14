@@ -29,11 +29,14 @@ Added in _CustomBreeze_:
 
 * Configurable button size, shape, translucency, colours and outlining
 
-* Default buttons are rounded rectangles with translucent outlined accent colours, with a large clickable area. These are designed to complement the "Blue Ocean" design refresh in Plasma 5.23, along with the Plasma 5.23 accent colour feature:
-> ![Default button style, dark](screenshots/highlight_gifs/cdark.gif?raw=true "Default button style, dark")![Default button style, light](screenshots/highlight_gifs/clight.gif?raw=true "Default button style, light")
-> ![Green button style, dark](screenshots/highlight_gifs/gdark.gif?raw=true "Green button style, dark")![Green button style, light](screenshots/highlight_gifs/glight.gif?raw=true "Green button style, light")
-> ![Pink button style, dark](screenshots/highlight_gifs/pdark.gif?raw=true "Pink button style, dark")![Pink button style, light](screenshots/highlight_gifs/plight.gif?raw=true "Pink button style, light")
-> ![Orange button style, dark](screenshots/highlight_gifs/odark.gif?raw=true "Orange button style, dark")![Orange button style, light](screenshots/highlight_gifs/olight.gif?raw=true "Orange button style, light")
+* Default buttons are "Integrated Rounded Rectangles" with translucent outlined accent colours, with a large clickable area. These are designed to complement the "Blue Ocean" design refresh in Plasma 5.23, along with the Plasma 5.23 accent colour feature:
+> ![Default Integrated Rounded rectangle button style, dark](screenshots/highlight_gifs/icdark.gif?raw=true "Default Integrated Rounded rectangle button style, dark")
+* Alternative "Traffic lights" background colours:
+> ![Traffic lights button style, dark](screenshots/highlight_gifs/icdark_trafficlights.gif?raw=true "Traffic lights button style, dark")
+
+* Alternative "Full-height Rounded Rectangle" button shape:
+> ![Rounded rectangle button style, dark](screenshots/highlight_gifs/cdark.gif?raw=true "Default button style, dark")![Rounded Rectangle button style, light](screenshots/highlight_gifs/clight.gif?raw=true "Default button style, light")
+> ![Pink button style, dark](screenshots/highlight_gifs/pdark.gif?raw=true "Green button style, dark")![Pink button style, light](screenshots/highlight_gifs/plight.gif?raw=true "Pink button style, light")
 > ![Turquoise button style, dark](screenshots/highlight_gifs/tdark.gif?raw=true "Turquoise button style, dark")![Turquoise button style, light](screenshots/highlight_gifs/tlight.gif?raw=true "Turquoise button style, light")
 
 
@@ -50,8 +53,7 @@ Added in _CustomBreeze_:
 * Configurable button spacing (left and right), titlebar margins (sides, top/bottom and option for different maximized), corner radius; all with scaling for HiDPI:
 > ![Screenshot of Alignment & Spacing tab](screenshots/alignment_and_spacing.png?raw=true "Screenshot of Alignment & Spacing tab")
 
-* Transparency/opacity configurable for both active/inactive titlebars; setting to make maximized windows opaque; blur is configurable:
-> ![Screenshot of Titlebar tab](screenshots/titlebar_tab.png?raw=true "Screenshot of Titlebar tab")
+* Transparency/opacity configurable for both active/inactive titlebars/headers; setting to make maximized windows opaque; blur is configurable:
 
 * Configurable thin window outline with optional accent colours:
 > ![Composite screenshot of thin window outlines with Contrast blended with accent colour (dark)](screenshots/thin_window_outline_dark_contrast_accent.png?raw=true "Composite screenshot of thin window outlines with Contrast blended with accent colour (dark)")
@@ -62,8 +64,8 @@ Added in _CustomBreeze_:
 
 * Configurable animations
 
-### Known issues
-* GTK apps' titlebar buttons will not always update if you change a _CustomBreeze_ setting. Workaround: you need to select another window decoration and then select _CustomBreeze_ again to generate the GTK titlebar buttons; alternatively you can change your colour scheme and the GTK titlebar buttons will generate.
+* Ability to load icons from the system icon theme. For example, the following is with the quasi-Windows 11-style _Cobalt_ icon theme:
+![Screenshot of using system icon theme](screenshots/use_system_icon_theme.png?raw=true "Screenshot of using system icon theme")
 
 &nbsp;
 
@@ -114,8 +116,8 @@ Uninstall build script:
 <a name="icons"/>
 
 ## System icon theme
-To make your Plasma Desktop fully consistent, there are also matching system icon themes. These add consistent titlebar button icons to certain minor context menus in Plasma, for example, _Classik-with-Square-highlight_:
-> <img src="https://raw.githubusercontent.com/paulmcauley/classikstyles/paulmcauley/selectable_buttoniconstyles/screenshots/classik_square_icons.png" alt="Screenshot of Classik with Square highlight icon theme" width="512">
+To make your Plasma Desktop fully consistent, there are also matching system icon themes. These add consistent titlebar button icons to certain minor context menus in Plasma, and also add consistent GTK application titlebars (for Firefox to have consistent titlebar icons, it is recommended to set the system GNOME/GTK Application style to Adwaita as Breeze is buggy). For example, _Klassy-with-Square-highlight_:
+> <img src="https://raw.githubusercontent.com/paulmcauley/classikstyles/paulmcauley/selectable_buttoniconstyles/screenshots/klassy_square_icons.png" alt="Screenshot of Klassy with Square highlight icon theme" width="512">
 
 To obtain these icon themes go to System Settings->Appearance->Icons->Get New Icons... and search for "klassy". Then download your theme of choice to match your Button icon style and Button highlight style:
 > ![Screenshot of downloading matching Klassy system icons](screenshots/icon_download.png?raw=true "Screenshot of downloading matching Klassy system icons")

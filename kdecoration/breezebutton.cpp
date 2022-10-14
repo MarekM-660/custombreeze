@@ -160,14 +160,14 @@ void Button::paint(QPainter *painter, const QRect &repaintRegion)
     if (shouldDrawBackgroundStroke())
         m_outlineColor = this->outlineColor();
 
-    painter->save();
-
     if (!m_smallButtonPaddedSize.isValid() || isStandAlone()) {
         m_smallButtonPaddedSize = geometry().size().toSize();
         int iconWidth = qRound(qreal(m_smallButtonPaddedSize.width()) * 0.9);
         setIconSize(QSize(iconWidth, iconWidth));
         setBackgroundVisibleSize(QSizeF(iconWidth, iconWidth));
     }
+
+    painter->save();
 
     // menu button
     if (type() == DecorationButtonType::Menu) {
@@ -219,25 +219,37 @@ void Button::drawIcon(QPainter *painter) const
         if (d->buttonBackgroundType() == ButtonBackgroundType::FullHeight)
             paintFullHeightButtonBackground(painter);
     }
-
     bool isInactive(d && !d->client().data()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
 
-    // translate from icon offset
-    painter->translate(m_iconOffset);
+    // get the device offset of the paddedIcon from the top-left of the titlebar as a reference-point for pixel-snapping algorithms
+    //(ideally, the device offset from the top-left of the screen would be better for fractional scaling, but it is not available in the API)
+    QPointF deviceOffsetTitleBarTopLeftToIconTopLeft;
+    QPointF topLeftPaddedButtonDeviceGeometry = painter->deviceTransform().map(geometry().topLeft());
+
+    // get top-left geometry relative to the titlebar top-left as is the best reference position available that is most likely to be a whole pixel
+    //(on button hover sometimes the painter gives geometry relative to the button rather than to titlebar, so this is also why this is necessary)
+    QPointF titleBarTopLeftDeviceGeometry = painter->deviceTransform().map(QRectF(d->titleBar()).topLeft());
+    deviceOffsetTitleBarTopLeftToIconTopLeft = topLeftPaddedButtonDeviceGeometry - titleBarTopLeftDeviceGeometry;
+
     painter->translate(geometry().topLeft());
 
+    // translate from icon offset -- translates to the edge of smallButtonPaddedWidth
+    painter->translate(m_iconOffset);
+    deviceOffsetTitleBarTopLeftToIconTopLeft += (m_iconOffset * painter->device()->devicePixelRatioF());
+
     const qreal smallButtonPaddedWidth(m_smallButtonPaddedSize.width());
-    int iconWidth(m_iconSize.width());
+    qreal iconWidth(m_iconSize.width());
     if (d->buttonBackgroundType() == ButtonBackgroundType::Small || isStandAlone() || m_isGtkCsdButton)
         paintSmallSizedButtonBackground(painter);
 
     // translate to draw icon in the centre of smallButtonPaddedWidth (smallButtonPaddedWidth has additional padding)
-    qreal iconTranslationOffset = (smallButtonPaddedWidth - qreal(iconWidth)) / 2;
+    qreal iconTranslationOffset = (smallButtonPaddedWidth - iconWidth) / 2;
     painter->translate(iconTranslationOffset, iconTranslationOffset);
+    deviceOffsetTitleBarTopLeftToIconTopLeft += (QPointF(iconTranslationOffset, iconTranslationOffset) * painter->device()->devicePixelRatioF());
 
     qreal scaleFactor = 1;
     if (!m_systemIconIsAvailable) {
-        scaleFactor = static_cast<qreal>(iconWidth) / 18;
+        scaleFactor = iconWidth / 18;
         /*
         scale painter so that all further rendering is preformed inside QRect( 0, 0, 18, 18 )
         */
@@ -252,7 +264,7 @@ void Button::drawIcon(QPainter *painter) const
         // this method commented out is for original non-cosmetic pen painting method (gives blurry icons at larger sizes )
         // pen.setWidthF( PenWidth::Symbol*qMax((qreal)1.0, 20/smallButtonPaddedWidth ) );
 
-        // cannot use a scaled cosmetic pen if GTK CSD as kde-gtk-config generates svg icons
+        // cannot use a scaled cosmetic pen if GTK CSD as kde-gtk-config generates svg icons. TODO:don't use cosmetic pen for background outlines either
         if (m_isGtkCsdButton) {
             pen.setWidthF(PenWidth::Symbol);
         } else {
@@ -268,12 +280,16 @@ void Button::drawIcon(QPainter *painter) const
                     RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons, iconWidth, m_devicePixelRatio);
             } else if (d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleMacOS
                        || d->internalSettings()->buttonIconStyle() == InternalSettings::EnumButtonIconStyle::StyleSweet) {
-                iconRenderer =
-                    RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons, 18, m_devicePixelRatio, scaleFactor);
+                iconRenderer = RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons, 18, m_devicePixelRatio);
                 iconRenderer->responsiveButtons(isInactive, isHovered(), isChecked());
             } else
-                iconRenderer =
-                    RenderDecorationButtonIcon18By18::factory(d->internalSettings(), painter, false, m_boldButtonIcons, 18, m_devicePixelRatio, scaleFactor);
+                iconRenderer = RenderDecorationButtonIcon18By18::factory(d->internalSettings(),
+                                                                         painter,
+                                                                         false,
+                                                                         m_boldButtonIcons,
+                                                                         18,
+                                                                         m_devicePixelRatio,
+                                                                         deviceOffsetTitleBarTopLeftToIconTopLeft);
 
             switch (type()) {
             case DecorationButtonType::Close: {
@@ -751,12 +767,20 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
         painter->translate(m_fullHeightVisibleBackgroundOffset);
 
         QRectF backgroundBoundingRect = (QRectF(geometry().topLeft(), m_backgroundVisibleSize));
+        painter->setClipRect(backgroundBoundingRect);
         QPainterPath background;
         QPainterPath outline;
         painter->setPen(Qt::NoPen);
 
         bool drawOutline = false;
         bool drawOutlineUsingPath = false;
+
+        qreal penWidth = PenWidth::Symbol;
+        qreal geometryShrinkOffsetHorizontal = PenWidth::Symbol * 1.5;
+        if (KWindowSystem::isPlatformX11()) {
+            penWidth *= m_devicePixelRatio;
+            geometryShrinkOffsetHorizontal *= m_devicePixelRatio;
+        }
 
         if (shouldDrawBackgroundStroke()) {
             QRectF innerRect;
@@ -767,12 +791,6 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
             // drawOutline=false is for the case when you still want to shrink the button but don't want an outline e.g. with always show
             // highlighted close button and not hovered/pressed
 
-            qreal penWidth = PenWidth::Symbol;
-            qreal geometryShrinkOffsetHorizontal = PenWidth::Symbol * 1.5;
-            if (KWindowSystem::isPlatformX11()) {
-                penWidth *= m_devicePixelRatio;
-                geometryShrinkOffsetHorizontal *= m_devicePixelRatio;
-            }
             qreal geometryShrinkOffsetVertical = geometryShrinkOffsetHorizontal;
 
             if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle) {
@@ -783,9 +801,10 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
                                                                                 -geometryShrinkOffsetVertical));
                 background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
 
-            } else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle) {
-                geometryShrinkOffsetVertical = d->internalSettings()->fullHeightIntegratedRoundedRectangleBottomPadding() * s->smallSpacing();
+            } else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle) {
                 qreal halfPenWidth = penWidth / 2;
+                geometryShrinkOffsetHorizontal = halfPenWidth;
+                geometryShrinkOffsetVertical = qMax(0.0, d->internalSettings()->integratedRoundedRectangleBottomPadding() * s->smallSpacing() - penWidth);
                 qreal geometryShrinkOffsetHorizontalOuter = geometryShrinkOffsetHorizontal - halfPenWidth;
                 qreal geometryShrinkOffsetHorizontalInner = geometryShrinkOffsetHorizontal + halfPenWidth;
                 qreal geometryShrinkOffsetVerticalOuter = geometryShrinkOffsetVertical - halfPenWidth;
@@ -794,27 +813,27 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
                 drawOutlineUsingPath = true;
 
                 if (m_rightmostRightVisible && !d->internalSettings()->titlebarRightMargin()) { // right-most-right
-                    outerRect = backgroundBoundingRect.adjusted(halfPenWidth,
+                    outerRect = backgroundBoundingRect.adjusted(0,
                                                                 -extensionByCornerRadiusInnerOuter,
                                                                 extensionByCornerRadiusInnerOuter,
                                                                 -geometryShrinkOffsetVerticalOuter);
-                    innerRect = backgroundBoundingRect.adjusted(penWidth + halfPenWidth,
+                    innerRect = backgroundBoundingRect.adjusted(penWidth,
                                                                 -extensionByCornerRadiusInnerOuter,
                                                                 extensionByCornerRadiusInnerOuter,
                                                                 -geometryShrinkOffsetVerticalInner);
                     backgroundBoundingRect =
-                        backgroundBoundingRect.adjusted(penWidth, -d->scaledCornerRadius(), d->scaledCornerRadius(), -geometryShrinkOffsetVertical);
+                        backgroundBoundingRect.adjusted(halfPenWidth, -d->scaledCornerRadius(), d->scaledCornerRadius(), -geometryShrinkOffsetVertical);
                 } else if (m_leftmostLeftVisible && !d->internalSettings()->titlebarLeftMargin()) { // left-most-left
                     outerRect = backgroundBoundingRect.adjusted(-extensionByCornerRadiusInnerOuter,
                                                                 -extensionByCornerRadiusInnerOuter,
-                                                                -halfPenWidth,
+                                                                0,
                                                                 -geometryShrinkOffsetVerticalOuter);
                     innerRect = backgroundBoundingRect.adjusted(-extensionByCornerRadiusInnerOuter,
                                                                 -extensionByCornerRadiusInnerOuter,
-                                                                -penWidth - halfPenWidth,
+                                                                -penWidth,
                                                                 -geometryShrinkOffsetVerticalInner);
                     backgroundBoundingRect =
-                        backgroundBoundingRect.adjusted(-d->scaledCornerRadius(), -d->scaledCornerRadius(), -penWidth, -geometryShrinkOffsetVertical);
+                        backgroundBoundingRect.adjusted(-d->scaledCornerRadius(), -d->scaledCornerRadius(), -halfPenWidth, -geometryShrinkOffsetVertical);
                 } else {
                     outerRect = backgroundBoundingRect.adjusted(geometryShrinkOffsetHorizontalOuter,
                                                                 -extensionByCornerRadiusInnerOuter,
@@ -856,8 +875,8 @@ void Button::paintFullHeightButtonBackground(QPainter *painter) const
             if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle)
                 background.addRoundedRect(backgroundBoundingRect, d->scaledCornerRadius(), d->scaledCornerRadius());
 
-            else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle) {
-                qreal geometryShrinkOffsetVertical = d->internalSettings()->fullHeightIntegratedRoundedRectangleBottomPadding() * s->smallSpacing();
+            else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle) {
+                qreal geometryShrinkOffsetVertical = d->internalSettings()->integratedRoundedRectangleBottomPadding() * s->smallSpacing() - penWidth;
                 if (m_rightmostRightVisible && !d->internalSettings()->titlebarRightMargin()) { // right-most-right
                     backgroundBoundingRect =
                         backgroundBoundingRect.adjusted(0, -d->scaledCornerRadius(), d->scaledCornerRadius(), -geometryShrinkOffsetVertical);
@@ -925,13 +944,12 @@ void Button::paintSmallSizedButtonBackground(QPainter *painter) const
             || ((d->internalSettings()->cornerRadius() < 0.2)
                 && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle))
             || ((d->internalSettings()->cornerRadius() < 0.2)
-                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle))) {
+                && (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle))) {
             painter->drawRect(
                 QRectF(0 + geometryShrinkOffset, 0 + geometryShrinkOffset, backgroundSize - geometryShrinkOffset, backgroundSize - geometryShrinkOffset));
         } else if (d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeSmallRoundedSquare
                    || d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeFullHeightRoundedRectangle // case where standalone
-                   || d->internalSettings()->buttonShape()
-                       == InternalSettings::EnumButtonShape::ShapeFullHeightIntegratedRoundedRectangle // case where standalone
+                   || d->internalSettings()->buttonShape() == InternalSettings::EnumButtonShape::ShapeIntegratedRoundedRectangle // case where standalone
         ) {
             painter->drawRoundedRect(
                 QRectF(0 + geometryShrinkOffset, 0 + geometryShrinkOffset, backgroundSize - geometryShrinkOffset, backgroundSize - geometryShrinkOffset),
@@ -975,19 +993,21 @@ void Button::setShouldDrawBoldButtonIcons()
 
     m_boldButtonIcons = false;
 
-    switch (d->internalSettings()->boldButtonIcons()) {
-    default:
-        break;
-    case InternalSettings::BoldIconsBold:
-        m_boldButtonIcons = true;
-        break;
-    case InternalSettings::BoldIconsFine:
-        break;
-    case InternalSettings::BoldIconsHiDpiOnly:
-        // If HiDPI system scaling use bold icons
-        if (m_devicePixelRatio > 1.15)
+    if (!m_isGtkCsdButton) {
+        switch (d->internalSettings()->boldButtonIcons()) {
+        default:
+            break;
+        case InternalSettings::BoldIconsHiDpiOnly:
+            // If HiDPI system scaling use bold icons
+            if (m_devicePixelRatio > 1.2)
+                m_boldButtonIcons = true;
+            break;
+        case InternalSettings::BoldIconsBold:
             m_boldButtonIcons = true;
-        break;
+            break;
+        case InternalSettings::BoldIconsFine:
+            break;
+        }
     }
 }
 

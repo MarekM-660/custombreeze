@@ -17,8 +17,12 @@ namespace Breeze
 class RenderStyleKite18By18 : public RenderDecorationButtonIcon18By18
 {
 public:
-    RenderStyleKite18By18(QPainter *painter, const bool notInTitlebar, const bool boldButtonIcons, qreal devicePixelRatio, qreal iconScaleFactor)
-        : RenderDecorationButtonIcon18By18(painter, notInTitlebar, boldButtonIcons, devicePixelRatio, iconScaleFactor){};
+    RenderStyleKite18By18(QPainter *painter,
+                          const bool fromKstyle,
+                          const bool boldButtonIcons,
+                          const qreal devicePixelRatio,
+                          const QPointF &deviceOffsetTitleBarTopLeftToIconTopLeft)
+        : RenderDecorationButtonIcon18By18(painter, fromKstyle, boldButtonIcons, devicePixelRatio, deviceOffsetTitleBarTopLeftToIconTopLeft){};
 
     void renderCloseIcon() override;
     void renderMaximizeIcon() override;
