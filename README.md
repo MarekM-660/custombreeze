@@ -15,9 +15,16 @@
 _CustomBreeze_ (_Klassy_ fork) is a highly customizable binary Window Decoration and Application Style plugin for recent versions of the KDE Plasma desktop. Install with the instructions below, and then enable in System Settings -> Appearance -> Window Decorations, and also in System Settings -> Appearance -> Application Style.
 
 Added in _CustomBreeze_:
-* New _MacOS_ and _Sweet_ button icons
+* New _MacOS_ and _Sweet_ button iconset
+
+![Screenshot of MacOS iconset](screenshots/macos_circle.png?raw=true "Screenshot of MacOS iconset")
+![Screenshot of Sweet iconset](screenshots/sweet_circle.png?raw=true "Screenshot of Sweet iconset")
 * Introduced the ability to set an image as the background of the title bar
+
+![Titlebar with image set as background](screenshots/titlebar_image.png?raw=true "Titlebar with image set as background")
 * Ability to change the font of the title bar
+
+![Verdana set as titlebar font](screenshots/font_verdana.png?raw=true "Verdana set as titlebar font")
 * Option to force the color of the title bar
 
 &nbsp;
