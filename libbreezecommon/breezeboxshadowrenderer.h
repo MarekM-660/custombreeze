@@ -1,10 +1,11 @@
+#ifndef BREEZE_BOXSHADOWRENDERER_H
+#define BREEZE_BOXSHADOWRENDERER_H
+
 /*
  * SPDX-FileCopyrightText: 2018 Vlad Zahorodnii <vlad.zahorodnii@kde.org>
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
-
-#pragma once
 
 // own
 #include "breezecommon_export.h"
@@ -84,3 +85,5 @@ private:
 };
 
 } // namespace Breeze
+
+#endif

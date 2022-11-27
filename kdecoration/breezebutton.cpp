@@ -24,8 +24,6 @@
 namespace Breeze
 {
 
-using KDecoration2::ColorGroup;
-using KDecoration2::ColorRole;
 using KDecoration2::DecorationButtonType;
 
 //__________________________________________________________________
@@ -219,7 +217,7 @@ void Button::drawIcon(QPainter *painter) const
         if (d->buttonBackgroundType() == ButtonBackgroundType::FullHeight)
             paintFullHeightButtonBackground(painter);
     }
-    bool isInactive(d && !d->client().data()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
+    bool isInactive(d && !d->client().toStrongRef()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
 
     // get the device offset of the paddedIcon from the top-left of the titlebar as a reference-point for pixel-snapping algorithms
     //(ideally, the device offset from the top-left of the screen would be better for fractional scaling, but it is not available in the API)
