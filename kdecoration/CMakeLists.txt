@@ -2,6 +2,13 @@ add_definitions(-DTRANSLATION_DOMAIN="custom_kwin_deco")
 
 find_package(KF5 ${KF5_MIN_VERSION} REQUIRED COMPONENTS CoreAddons GuiAddons ConfigWidgets WindowSystem I18n IconThemes KIO)
 find_package(Qt${QT_MAJOR_VERSION} ${QT_MIN_VERSION} CONFIG REQUIRED COMPONENTS DBus)
+find_package (ECM 0.0.9 REQUIRED NO_MODULE)
+
+set (CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${ECM_MODULE_PATH}
+)
+
 
 ### XCB
 find_package(XCB COMPONENTS XCB)
@@ -40,7 +47,12 @@ set(breezedecoration_SRCS
     breezebutton.cpp
     breezedecoration.cpp
     breezesettingsprovider.cpp
-    breezesizegrip.cpp)
+    breezesizegrip.cpp
+    #breezeexceptionlist.cpp
+    breezetextbutton.cpp
+    breezeappmenubuttongroup.cpp
+    breezeappmenumodel.cpp
+    breezemenuoverflowbutton.cpp)
 
 # This is removed as kdecoration InternalSettings is now generated from libbreezecommon
 #kconfig_add_kcfg_files(breezedecoration_SRCS breezesettings.kcfgc)
@@ -68,6 +80,9 @@ set(breezedecoration_config_PART_FORMS
 
 ki18n_wrap_ui(breezedecoration_config_PART_FORMS_HEADERS ${breezedecoration_config_PART_FORMS})
 
+include(ECMQtDeclareLoggingCategory)
+add_subdirectory(libdbusmenuqt)
+
 ### build library
 add_library(customdecoration MODULE
     ${breezedecoration_SRCS}
@@ -80,6 +95,7 @@ target_link_libraries(customdecoration
         Qt::Gui
         Qt::DBus
     PRIVATE
+        dbusmenuqt
         customcommon5
         KDecoration2::KDecoration
         KF5::KIOWidgets 

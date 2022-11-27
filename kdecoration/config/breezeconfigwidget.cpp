@@ -131,6 +131,7 @@ ConfigWidget::ConfigWidget(QWidget *parent, const QVariantList &args)
     connect(m_ui.opaqueMaximizedTitlebars, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.blurTransparentTitlebars, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.applyOpacityToHeader, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
+    connect(m_ui.limOn, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.translucentButtonBackgrounds, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.colorizeSystemIcons, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
     connect(m_ui.lockTitleBarTopBottomMargins, &QAbstractButton::toggled, this, &ConfigWidget::updateChanged);
@@ -241,6 +242,7 @@ void ConfigWidget::load()
     m_ui.opaqueMaximizedTitlebars->setChecked(m_internalSettings->opaqueMaximizedTitlebars());
     m_ui.blurTransparentTitlebars->setChecked(m_internalSettings->blurTransparentTitlebars());
     m_ui.applyOpacityToHeader->setChecked(m_internalSettings->applyOpacityToHeader());
+    m_ui.limOn->setChecked(m_internalSettings->locallyIntegratedMenu());
     m_ui.translucentButtonBackgrounds->setChecked(m_internalSettings->translucentButtonBackgrounds());
     m_ui.colorizeSystemIcons->setChecked(m_internalSettings->colorizeSystemIcons());
     m_ui.backgroundImgEnabled->setChecked(m_internalSettings->backgroundImgEnabled());
@@ -318,6 +320,7 @@ void ConfigWidget::save()
     m_internalSettings->setOpaqueMaximizedTitlebars(m_ui.opaqueMaximizedTitlebars->isChecked());
     m_internalSettings->setBlurTransparentTitlebars(m_ui.blurTransparentTitlebars->isChecked());
     m_internalSettings->setApplyOpacityToHeader(m_ui.applyOpacityToHeader->isChecked());
+    m_internalSettings->setLocallyIntegratedMenu(m_ui.limOn->isChecked());
     m_internalSettings->setTranslucentButtonBackgrounds(m_ui.translucentButtonBackgrounds->isChecked());
     m_internalSettings->setColorizeSystemIcons(m_ui.colorizeSystemIcons->isChecked());
     m_internalSettings->setBackgroundImgEnabled(m_ui.backgroundImgEnabled->isChecked());
@@ -402,6 +405,7 @@ void ConfigWidget::defaults()
     m_ui.opaqueMaximizedTitlebars->setChecked(m_internalSettings->opaqueMaximizedTitlebars());
     m_ui.blurTransparentTitlebars->setChecked(m_internalSettings->blurTransparentTitlebars());
     m_ui.applyOpacityToHeader->setChecked(m_internalSettings->applyOpacityToHeader());
+    m_ui.limOn->setChecked(m_internalSettings->locallyIntegratedMenu());
     m_ui.translucentButtonBackgrounds->setChecked(m_internalSettings->translucentButtonBackgrounds());
     m_ui.colorizeSystemIcons->setChecked(m_internalSettings->colorizeSystemIcons());
     m_ui.backgroundImgEnabled->setChecked(m_internalSettings->backgroundImgEnabled());
@@ -461,6 +465,8 @@ void ConfigWidget::updateChanged()
     else if (m_ui.blurTransparentTitlebars->isChecked() != m_internalSettings->blurTransparentTitlebars())
         modified = true;
     else if (m_ui.applyOpacityToHeader->isChecked() != m_internalSettings->applyOpacityToHeader())
+        modified = true;
+    else if (m_ui.limOn->isChecked() != m_internalSettings->locallyIntegratedMenu())
         modified = true;
     else if (m_ui.translucentButtonBackgrounds->isChecked() != m_internalSettings->translucentButtonBackgrounds())
         modified = true;

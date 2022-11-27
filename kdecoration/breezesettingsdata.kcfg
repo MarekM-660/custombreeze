@@ -153,6 +153,11 @@
     <entry name="ApplyOpacityToHeader" type = "Bool">
         <default>true</default>
     </entry>
+
+    <!-- Apply titlebar opacity settings to entire Header area -->
+    <entry name="LocallyIntegratedMenu" type = "Bool">
+        <default>false</default>
+    </entry>
     
     <!-- translucent button backgrounds -->
     <entry name="TranslucentButtonBackgrounds" type = "Bool">

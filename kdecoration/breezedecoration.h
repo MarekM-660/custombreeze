@@ -9,6 +9,8 @@
  */
 
 #include "breeze.h"
+#include "breezeappmenubuttongroup.h"
+#include "breezetextbutton.h"
 
 #include "breezesettings.h"
 #include "colortools.h"
@@ -17,6 +19,7 @@
 #include <KDecoration2/Decoration>
 #include <KDecoration2/DecorationSettings>
 
+#include <QMouseEvent>
 #include <QPainterPath>
 #include <QPalette>
 #include <QVariant>
@@ -73,6 +76,13 @@ public:
     //@{
     void setOpacity(qreal);
 
+    qreal textWidth(const QString &text) const
+    {
+        QFontMetrics f(settings().data()->font());
+
+        return f.boundingRect(text).width();
+    };
+
     qreal opacity() const
     {
         return m_opacity;
@@ -105,6 +115,8 @@ public:
 
     inline bool hideTitleBar() const;
     //@}
+
+    QPoint windowPos() const;
 
     void setThinWindowOutlineOverrideColor(const bool on, const QColor &color);
 
@@ -174,6 +186,7 @@ private Q_SLOTS:
 private:
     //* return the rect in which caption will be drawn
     QPair<QRect, Qt::Alignment> captionRect() const;
+    QRect appMenuRect() const;
 
     void createButtons();
     void calculateWindowAndTitleBarShapes(const bool windowShapeOnly = false);
@@ -181,6 +194,7 @@ private:
     void updateShadow(const bool force = false, const bool noCache = false, const bool isThinWindowOutlineOverride = false);
     QSharedPointer<KDecoration2::DecorationShadow> createShadowObject(const float strengthScale, const bool isThinWindowOutlineOverride = false);
     void setScaledCornerRadius();
+    AppMenuButtonGroup *m_menuButtons = nullptr;
 
     //*@name border size
     //@{
@@ -239,6 +253,8 @@ private:
     //* frame corner radius, scaled according to smallspacing
     qreal m_scaledCornerRadius = 3.0;
 
+    QMouseEvent *m_pressEvent = nullptr;
+
     bool m_tabletMode = false;
 
     // QColor m_maximizedWindowHighlight = QColor();
@@ -277,6 +293,12 @@ private:
     QColor m_originalThinWindowOutlineInactivePreOverride = QColor();
     //*flag to animate out an overridden thin window outline
     bool m_animateOutOverriddenThinWindowOutline = false;
+
+    // Decoration interface
+protected:
+    virtual void hoverMoveEvent(QHoverEvent *event) override;
+    virtual void mousePressEvent(QMouseEvent *event) override;
+    virtual void mouseReleaseEvent(QMouseEvent *event) override;
 };
 
 bool Decoration::hasBorders() const

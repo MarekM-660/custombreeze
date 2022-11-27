@@ -11,7 +11,7 @@ namespace Breeze
 {
 
 using namespace std;
-void setDebugOutput(const QString &rawTargetFilePath_)
+inline void setDebugOutput(const QString &rawTargetFilePath_)
 {
     static QString rawTargetFilePath;
     rawTargetFilePath = rawTargetFilePath_;

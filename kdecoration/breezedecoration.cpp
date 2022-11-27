@@ -36,9 +36,14 @@
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>
 #include <QDBusPendingReply>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QTextStream>
 #include <QTimer>
+
+#if BREEZE_HAVE_X11
+#include <QX11Info>
+#endif
 
 #include <cmath>
 
@@ -456,6 +461,17 @@ void Decoration::init()
         update(titleBar());
     });
 
+    connect(this, &Decoration::sectionUnderMouseChanged, this, [this](Qt::WindowFrameSection section) {
+        auto wasHovered = m_menuButtons->hovered();
+        auto nowHovered = section == Qt::TitleBarArea;
+        if (wasHovered == nowHovered)
+            return;
+
+        m_menuButtons->setHovered(nowHovered);
+
+        update(titleBar());
+    });
+
     connect(c.data(), &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::updateAnimationState);
     connect(c.data(), &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::updateOpaque);
     connect(c.data(), &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::updateBlur);
@@ -663,6 +679,9 @@ void Decoration::reconfigure()
 
     setAddedTitleBarOpacity();
 
+    if (m_menuButtons)
+        m_menuButtons->setShowing(m_internalSettings->locallyIntegratedMenu());
+
     // borders
     recalculateBorders();
 
@@ -748,6 +767,17 @@ void Decoration::createButtons()
 {
     m_leftButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Left, this, &Button::create);
     m_rightButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Right, this, &Button::create);
+
+    m_menuButtons = new AppMenuButtonGroup(this);
+
+    connect(m_menuButtons, &AppMenuButtonGroup::menuUpdated, this, &Decoration::updateButtonsGeometry);
+
+    if (m_internalSettings->locallyIntegratedMenu()) {
+        m_menuButtons->updateAppMenuModel();
+    } else {
+        m_menuButtons->setShowing(false);
+    }
+
     updateButtonsGeometry();
 }
 
@@ -917,6 +947,44 @@ void Decoration::updateButtonsGeometry()
 
         } else
             m_rightButtons->setPos(QPointF(size().width() - m_rightButtons->geometry().width() - hPadding - borderRight(), vPadding));
+    }
+
+    // Menu
+    if (!m_menuButtons->buttons().isEmpty()) {
+        // const int captionOffset = captionMinWidth() + settings()->smallSpacing();
+        const QRect availableRect = appMenuRect();
+        m_menuButtons->setPos(availableRect.topLeft());
+        auto cR = captionRect();
+        auto actualCaptionRect = QRectF{0.0, 0.0, textWidth(client().toStrongRef()->caption()), static_cast<qreal>(captionHeight())};
+
+        actualCaptionRect.moveCenter(cR.first.center());
+
+        if (cR.second.testFlag(Qt::AlignLeft)) {
+            actualCaptionRect.moveLeft(cR.first.left());
+        } else if (cR.second.testFlag(Qt::AlignRight)) {
+            actualCaptionRect.moveRight(cR.first.right());
+        }
+
+        QRectF realGeometry;
+
+        if (!m_menuButtons->showing()) {
+            auto totalWidth = 0.0;
+            for (auto &btn : m_menuButtons->buttons()) {
+                totalWidth += btn->size().width();
+            }
+
+            realGeometry = QRectF{m_menuButtons->pos().x(),
+                                  m_menuButtons->pos().y(),
+                                  totalWidth + m_menuButtons->spacing() * (m_menuButtons->buttons().size() - 1),
+                                  static_cast<qreal>(captionHeight())};
+
+        } else {
+            realGeometry = m_menuButtons->geometry();
+        }
+        m_menuButtons->setAlwaysShow(!realGeometry.intersects(actualCaptionRect));
+
+        m_menuButtons->setSpacing(0);
+        // m_menuButtons->updateOverflow(availableRect);
     }
 
     update();
@@ -1099,16 +1167,46 @@ void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
 
     painter->restore();
 
-    // draw caption
-    painter->setFont(m_internalSettings->titlebarFont());
-    painter->setPen(fontColor());
-    const auto cR = captionRect();
-    const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
-    painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
+    if (!m_menuButtons->showing() || m_menuButtons->alwaysShow() || m_menuButtons->buttons().empty()) {
+        // draw caption
+        painter->setFont(m_internalSettings->titlebarFont());
+        painter->setPen(fontColor());
+        const auto cR = captionRect();
+        const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
+        painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
+    }
 
     // draw all buttons
     m_leftButtons->paint(painter, repaintRegion);
     m_rightButtons->paint(painter, repaintRegion);
+
+    m_menuButtons->paint(painter, repaintRegion);
+}
+
+//________________________________________________________________
+QPoint Decoration::windowPos() const
+{
+    const auto *decoratedClient = client().toStrongRef().data();
+    WId windowId = decoratedClient->windowId();
+    //--- From: BreezeSizeGrip.cpp
+    /*
+    get root position matching position
+    need to use xcb because the embedding of the widget
+    breaks QT's mapToGlobal and other methods
+    */
+    auto connection(QX11Info::connection());
+    xcb_get_geometry_cookie_t cookie(xcb_get_geometry(connection, windowId));
+    QScopedPointer<xcb_get_geometry_reply_t> reply(xcb_get_geometry_reply(connection, cookie, nullptr));
+    if (reply) {
+        // translate coordinates
+        xcb_translate_coordinates_cookie_t coordCookie(
+            xcb_translate_coordinates(connection, windowId, reply.data()->root, -reply.data()->border_width, -reply.data()->border_width));
+        QScopedPointer<xcb_translate_coordinates_reply_t> coordReply(xcb_translate_coordinates_reply(connection, coordCookie, nullptr));
+        if (coordReply) {
+            return QPoint(coordReply.data()->dst_x, coordReply.data()->dst_y);
+        }
+    }
+    return QPoint(0, 0);
 }
 
 // outputs the icon height + padding to make a small button, the actual icon height, and the background height to make a small button
@@ -1274,6 +1372,28 @@ QPair<QRect, Qt::Alignment> Decoration::captionRect() const
                 return qMakePair(fullRect, Qt::AlignCenter);
         }
         }
+    }
+}
+
+//________________________________________________________________
+QRect Decoration::appMenuRect() const
+{
+    if (hideTitleBar())
+        return QRect();
+    else {
+        auto c = client().toStrongRef();
+        const int leftOffset = m_leftButtons->buttons().isEmpty()
+            ? m_internalSettings->titlebarLeftMargin() * settings()->smallSpacing()
+            : m_leftButtons->geometry().x() + m_leftButtons->geometry().width() + m_internalSettings->titlebarLeftMargin() * settings()->smallSpacing();
+
+        const int rightOffset = m_rightButtons->buttons().isEmpty()
+            ? m_internalSettings->titlebarLeftMargin() * settings()->smallSpacing()
+            : size().width() - m_rightButtons->geometry().x() + m_internalSettings->titlebarLeftMargin() * settings()->smallSpacing();
+
+        const int yOffset = settings()->smallSpacing() * m_internalSettings->titlebarTopMargin();
+        const QRect maxRect(leftOffset, yOffset, size().width() - leftOffset - rightOffset, captionHeight());
+
+        return maxRect;
     }
 }
 
@@ -1610,6 +1730,63 @@ void Decoration::setAddedTitleBarOpacity()
         if (systemInactiveTitlebarColor.alpha() == 255)
             m_addedTitleBarOpacityInactive = qreal(m_internalSettings->inactiveTitlebarOpacity()) / 100;
     }
+}
+
+void Decoration::hoverMoveEvent(QHoverEvent *event)
+{
+    if (m_menuButtons && m_menuButtons->isMenuOpen() && m_menuButtons->openedMenu()) {
+        m_menuButtons->setActiveAction(event->pos());
+    }
+
+    if (m_pressEvent) {
+        auto btn = qobject_cast<TextButton *>(m_menuButtons->buttonAt(m_pressEvent->pos().x(), m_pressEvent->pos().y()));
+        btn->setPressed(false);
+
+        if (btn && m_pressEvent->y() < event->pos().y()) {
+            m_menuButtons->trigger(btn);
+        }
+
+        delete m_pressEvent;
+        m_pressEvent = nullptr;
+    }
+    if (!m_menuButtons->isMenuOpen())
+        KDecoration2::Decoration::hoverMoveEvent(event);
+}
+
+void Decoration::mousePressEvent(QMouseEvent *event)
+{
+    auto btn = qobject_cast<TextButton *>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
+    if (!btn) {
+        KDecoration2::Decoration::mousePressEvent(event);
+        return;
+    }
+    m_pressEvent = new QMouseEvent(event->type(), event->pos(), event->button(), event->buttons(), event->modifiers());
+    btn->setPressed(true);
+}
+
+void Decoration::mouseReleaseEvent(QMouseEvent *event)
+{
+    if (m_menuButtons && m_menuButtons->isMenuOpen() && m_menuButtons->openedMenu()) {
+        auto adjustedpt = event->pos();
+        adjustedpt.ry() -= (titleBar().height() + m_internalSettings->titlebarBottomMargin() * settings()->smallSpacing());
+        adjustedpt.rx() -= (m_menuButtons->openedMenu()->x() - windowPos().x());
+        auto act = m_menuButtons->openedMenu()->actionAt(adjustedpt);
+        if (act)
+            act->trigger();
+        m_menuButtons->openedMenu()->close();
+    }
+
+    if (m_menuButtons && m_pressEvent && m_pressEvent->pos() == event->pos()) {
+        auto btn = qobject_cast<TextButton *>(m_menuButtons->buttonAt(event->pos().x(), event->pos().y()));
+        btn->setPressed(false);
+        m_menuButtons->trigger(btn);
+        // KDecoration2::Decoration::mousePressEvent(m_pressEvent);
+
+        delete m_pressEvent;
+        m_pressEvent = nullptr;
+    }
+
+    KDecoration2::Decoration::mouseReleaseEvent(event);
 }
 
 void Decoration::setScaledCornerRadius()

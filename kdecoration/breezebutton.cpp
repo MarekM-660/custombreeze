@@ -24,8 +24,6 @@
 namespace Breeze
 {
 
-using KDecoration2::ColorGroup;
-using KDecoration2::ColorRole;
 using KDecoration2::DecorationButtonType;
 
 //__________________________________________________________________
@@ -123,6 +121,14 @@ Button *Button::create(DecorationButtonType type, KDecoration2::Decoration *deco
             });
             break;
 
+        case DecorationButtonType::ApplicationMenu:
+            QObject::connect(b, &Button::visibilityChanged, b, [d, b](bool visible) {
+                if (d->internalSettings()->locallyIntegratedMenu() && visible) {
+                    b->setVisible(false);
+                }
+            });
+            b->setVisible(!d->internalSettings()->locallyIntegratedMenu());
+
         default:
             break;
         }
@@ -219,7 +225,7 @@ void Button::drawIcon(QPainter *painter) const
         if (d->buttonBackgroundType() == ButtonBackgroundType::FullHeight)
             paintFullHeightButtonBackground(painter);
     }
-    bool isInactive(d && !d->client().data()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
+    bool isInactive(d && !d->client().toStrongRef()->isActive() && !isHovered() && !isPressed() && m_animation->state() != QAbstractAnimation::Running);
 
     // get the device offset of the paddedIcon from the top-left of the titlebar as a reference-point for pixel-snapping algorithms
     //(ideally, the device offset from the top-left of the screen would be better for fractional scaling, but it is not available in the API)
@@ -336,13 +342,14 @@ void Button::drawIcon(QPainter *painter) const
                 break;
             }
 
-            case DecorationButtonType::ApplicationMenu: {
-                iconRenderer->renderApplicationMenuIcon();
+            case DecorationButtonType::ContextHelp: {
+                iconRenderer->renderContextHelpIcon();
                 break;
             }
 
-            case DecorationButtonType::ContextHelp: {
-                iconRenderer->renderContextHelpIcon();
+            case DecorationButtonType::ApplicationMenu: {
+                if (!d->internalSettings()->locallyIntegratedMenu())
+                    iconRenderer->renderApplicationMenuIcon();
                 break;
             }
 
@@ -691,6 +698,11 @@ QColor Button::outlineColor(bool getNonAnimatedColor) const
 //________________________________________________________________
 void Button::reconfigure()
 {
+    if (type() == DecorationButtonType::ApplicationMenu) {
+        auto d = qobject_cast<Decoration *>(decoration());
+        setVisible(!d->internalSettings()->locallyIntegratedMenu());
+    }
+
     // animation
     auto d = qobject_cast<Decoration *>(decoration());
     if (d)

@@ -37,8 +37,7 @@ if(WITH_DECORATIONS)
     find_package(KDecoration2 REQUIRED)
     add_subdirectory(kdecoration)
 endif()
-
-#add_subdirectory(colors)
+ 
 add_subdirectory(libbreezecommon)
 add_subdirectory(kstyle)
 
