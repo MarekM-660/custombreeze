@@ -9,6 +9,7 @@
  */
 
 #include "breezedecoration.h"
+#include <qimage.h>
 
 #if CUSTOM_DECORATION_DEBUG_MODE
 #include "setqdebug_logging.h"
@@ -1053,7 +1054,7 @@ void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
 
     QColor titleBarColor(titleBarColorWithAddedTransparency());
 
-    QImage titleBarImage(m_internalSettings->titlebarBackgroundImg());
+    QImage titleBarImage(nullptr);
 
     // render a linear gradient on title area
     if (c->isActive() && m_internalSettings->drawBackgroundGradient()) {
@@ -1063,6 +1064,7 @@ void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
         painter->setBrush(gradient);
 
     } else if (m_internalSettings->backgroundImgEnabled()) {
+        titleBarImage = QImage(m_internalSettings->titlebarBackgroundImg());
         painter->drawRoundedRect(QRect(QPoint(0, 0), titleBarImage.size()), m_internalSettings->cornerRadius(), m_internalSettings->cornerRadius());
         painter->setBrush(QBrush(titleBarImage));
 
